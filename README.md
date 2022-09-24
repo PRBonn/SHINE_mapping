@@ -14,15 +14,7 @@ Xingguang Zhong, Yue Pan, Jens Behley and Cyrill Stachniss
 
 Incremental Mapping | Reconstruction Results |
 :-: | :-: |
-<video src='https://user-images.githubusercontent.com/34207278/192104336-00cc5ce8-e592-4a5e-9ce0-d28da6423821.mp4'> | <video src='https://user-images.githubusercontent.com/34207278/192104346-0ddb91f8-7f78-4048-87ef-44bbcc098293.mp4'> |
-
-
-
-
-
-
-
-
+<video src='https://user-images.githubusercontent.com/34207278/192112474-f88d0d90-96a4-4ff3-b3bb-4e119b810d9e.mp4'> | <video src='https://user-images.githubusercontent.com/34207278/192112449-56cb5c73-500f-416a-8892-e44d0e962669.mp4'> |
 
 
 ## Abstract
