@@ -1,19 +1,29 @@
 # ✨ SHINE-Mapping: Large-Scale 3D Mapping Using Sparse Hierarchical Implicit Neural Representations
 This repository contains the implementation of the paper:
 
-Large-Scale 3D Mapping Using **S**parse **H**ierarchical **I**mplicit **NE**ural Representations.
+SHINE-Mapping: Large-Scale 3D Mapping Using **S**parse **H**ierarchical **I**mplicit **NE**ural Representations.
 
 Xingguang Zhong, Yue Pan, Jens Behley and Cyrill Stachniss
 
 [Link]() to the arXiv version of the paper will be available soon.
 
 ----
-
-![](./assets/teaser_for_github.png)
+![teaser_for_github](https://user-images.githubusercontent.com/34207278/192101055-271aafe2-7198-46b2-ae70-dae8d3bc0f97.png)
 
 ## Demo Video
 
-Coming soon.
+Incremental Mapping | Reconstruction Results |
+:-: | :-: |
+<video src='https://user-images.githubusercontent.com/34207278/192104336-00cc5ce8-e592-4a5e-9ce0-d28da6423821.mp4'> | <video src='https://user-images.githubusercontent.com/34207278/192104346-0ddb91f8-7f78-4048-87ef-44bbcc098293.mp4'> |
+
+
+
+
+
+
+
+
+
 
 ## Abstract
 
