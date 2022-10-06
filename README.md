@@ -6,7 +6,7 @@ SHINE-Mapping: Large-Scale 3D Mapping Using **S**parse **H**ierarchical **I**mpl
 
 By [Xingguang Zhong](https://www.ipb.uni-bonn.de/people/xingguang-zhong/), [Yue Pan](https://www.ipb.uni-bonn.de/people/yue-pan/), [Jens Behley](https://www.ipb.uni-bonn.de/people/jens-behley/) and [Cyrill Stachniss](https://www.ipb.uni-bonn.de/people/cyrill-stachniss/)
 
-[Arxiv Preprint](https://arxiv.org/abs/2210.02299) | [Demo Video](https://github.com/PRBonn/SHINE_mapping/edit/master/README.md#demo-video)
+[Arxiv Preprint](https://arxiv.org/abs/2210.02299) | [Demo Video]()
 
 ![teaser_fig](https://user-images.githubusercontent.com/34207278/194295874-ccf02ed0-ad10-4451-acd2-e70001737ecf.png)
 
