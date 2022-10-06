@@ -1,14 +1,15 @@
 # ✨ SHINE-Mapping: Large-Scale 3D Mapping Using Sparse Hierarchical Implicit Neural Representations
+
 This repository contains the implementation of the paper:
 
 SHINE-Mapping: Large-Scale 3D Mapping Using **S**parse **H**ierarchical **I**mplicit **NE**ural Representations.
 
-Xingguang Zhong, Yue Pan, Jens Behley and Cyrill Stachniss
+By [Xingguang Zhong](https://www.ipb.uni-bonn.de/people/xingguang-zhong/), [Yue Pan](https://www.ipb.uni-bonn.de/people/yue-pan/), [Jens Behley](https://www.ipb.uni-bonn.de/people/jens-behley/) and [Cyrill Stachniss](https://www.ipb.uni-bonn.de/people/cyrill-stachniss/)
 
-[Link](https://arxiv.org/abs/2210.02299) to the arXiv version of the paper.
+[Arxiv Preprint](https://arxiv.org/abs/2210.02299) | [Demo Video](https://github.com/PRBonn/SHINE_mapping/edit/master/README.md#demo-video)
 
-----
-![teaser_for_github](https://user-images.githubusercontent.com/34207278/192101055-271aafe2-7198-46b2-ae70-dae8d3bc0f97.png)
+![teaser_fig](https://user-images.githubusercontent.com/34207278/194295874-ccf02ed0-ad10-4451-acd2-e70001737ecf.png)
+
 
 ## Demo Video
 
@@ -20,12 +21,11 @@ Incremental Mapping | Reconstruction Results |
 ## Abstract
 Accurate mapping of large-scale environments is an essential building block of most outdoor autonomous systems. Challenges of traditional mapping methods include the balance between memory consumption and mapping accuracy. This paper addresses the problems of achieving large-scale 3D reconstructions with implicit representations using 3D LiDAR measurements. We learn and store implicit features through an octree-based hierarchical structure, which is sparse and extensible. The features can be turned into signed distance values through a shallow neural network. We leverage binary cross entropy loss to optimize the local features with the 3D measurements as supervision. Based on our implicit representation, we design an incremental mapping system with regularization to tackle the issue of catastrophic forgetting in continual learning. Our experiments show that our 3D reconstructions are more accurate, complete, and memory-efficient than current state-of-the-art 3D mapping methods.
 
-
-
 ## Codes
 Coming soon.
 
-
+## Acknowledgment
+This work has partially been funded by the European Union’s HORIZON programme under grant agreement No 101070405 (DigiForest).
 
 
 
