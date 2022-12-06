@@ -1,0 +1,334 @@
+import yaml
+import os
+from typing import List
+
+class SHINEConfig:
+    def __init__(self):
+
+        # Default values
+
+        # settings
+        self.name: str = "dummy"  # experiment name
+
+        self.output_root: str = ""  # output root folder
+        self.pc_path: str = ""  # input point cloud folder
+        self.pose_path: str = ""  # input pose file
+        self.calib_path: str = ""  # input calib file (to sensor frame)
+
+        self.load_model: bool = False  # load the pre-trained model or not
+        self.model_path: str = "/"  # pre-trained model path
+
+        self.first_frame_ref: bool = True  # if false, we directly use the world
+        # frame as the reference frame
+        self.begin_frame: int = 0  # begin from this frame
+        self.end_frame: int = 0  # end at this frame
+        self.every_frame: int = 1  # process every x frame
+
+        self.num_workers: int = 12 # number of worker for the dataloader
+        self.device: str = "cuda"  # use "cuda" or "cpu"
+        self.gpu_id: str = "0"  # used GPU id
+
+        # baseline
+        # self.run_baseline = False
+        # # select from vdb_fusion, voxblox_simple, voxblox_merged, voxblox_fast
+        # self.baseline_method = "vdb_fusion"
+        # self.voxel_size_m = 0.2
+        # self.sdf_trunc_m = 3 * self.voxel_size_m
+
+        # process
+        self.min_range: float = 0.5 # filter too-close points (and 0 artifacts)
+        self.pc_radius: float = 20.0  # keep only the point cloud inside the
+        # block with such radius (unit: m)
+        self.min_z: float = -3.0  # filter for z coordinates (unit: m)
+        self.max_z: float = 30.0
+
+        self.rand_downsample: bool = (
+            True  # apply random or voxel downsampling to input original point clcoud
+        )
+        self.vox_down_m: float = (
+            0.03  # the voxel size if using voxel downsampling (unit: m)
+        )
+        self.rand_down_r: float = (
+            1.0  # the decimation ratio if using random downsampling (0-1)
+        )
+
+        self.filter_noise: bool = False  # use SOR to remove the noise or not
+        self.sor_nn: int = 25  # SOR neighborhood size
+        self.sor_std: float = 2.5  # SOR std threshold
+
+        self.estimate_normal: bool = False  # estimate surface normal or not
+        self.normal_radius_m: float = 0.2  # supporting radius for estimating the normal
+        self.normal_max_nn: int = (
+            20  # supporting neighbor count for estimating the normal
+        )
+
+        # octree
+        self.tree_level_world: int = (
+            10  # the total octree level, allocated for the whole space
+        )
+        self.tree_level_feat: int = 4  # the octree levels with optimizable feature grid
+        # start from the leaf level
+        self.leaf_vox_size: float = 0.5  # voxel size of the octree leaf nodes (unit: m)
+        self.feature_dim: int = 8  # length of the feature for each grid feature
+        self.feature_std: float = 0.05  # grid feature initialization standard deviation
+        self.poly_int_on: bool = (
+            True  # use polynomial interpolation or linear interpolation
+        )
+        self.octree_from_surface_samples: bool = True  # Use all the surface samples or just the exact measurements to build the octree. If True may lead to larger memory, but is more robust while the reconstruction.
+
+        # sampler
+        self.surface_sample_range_m: float = 0.5 # 
+        self.surface_sample_n: int = 5
+        self.free_sample_begin_ratio: float = 0.3
+        self.free_sample_end_ratio: float = 1.0
+        self.free_sample_n: int = 2
+
+        # space carving sampling related (deprecated)
+        # self.carving_on = False
+        # self.tree_level_carving = self.tree_level_world
+        # self.carving_stop_depth_m = 0.5
+        # self.carving_inte_thre_m = 0.1
+
+        # continuous learning
+        self.continual_learning_reg: bool = True
+        # regularization based
+        self.lambda_forget: float = 1e5
+        self.cal_importance_weight_down_rate: int = 10
+        
+        # replay based
+        self.history_sample_ratio: int = 1
+        self.history_keep_ratio: int = 5
+        self.history_sample_res: float = 0.1
+
+        # label
+        self.occu_update_on: bool = False
+
+        # decoder
+        self.mlp_level: int = 2
+        self.mlp_hidden_dim: int = 64
+        self.mlp_bias_on: bool = True
+        self.freeze_after_frame: int = 20  # For incremental mode only, if the decoder model is not loaded , it would be trained and freezed after such frame number
+
+        # loss
+        self.ray_loss: bool = False  # one loss on a whole ray (including depth estimation loss or the differentiable rendering loss)
+        # the main loss type, select from the sample sdf loss ('sdf_bce', 'sdf_l1', 'sdf_l2') and the ray rendering loss ('dr', 'dr_neus')
+        self.main_loss_type: str = 'sdf_bce'
+        
+        self.sigma_sigmoid_m: float = 0.1
+        self.sigma_scale_constant: float = 0.0 # scale factor adding to the constant sigma value (linear with the distance) [deprecated]
+        self.logistic_gaussian_ratio: float = 0.55
+        
+        self.predict_sdf: bool = False
+        self.neus_loss_on: bool = False  # use the unbiased and occlusion-aware weights for differentiable rendering as introduced in NEUS
+        self.loss_weight_on: bool = False  # if True, the weight would be given to the loss, if False, the weight would be used to change the sigmoid's shape
+        self.behind_dropoff_on: bool = False  # behind surface drop off weight
+        self.dropoff_min_sigma: float = 1.0
+        self.dropoff_max_sigma: float = 5.0
+        self.normal_loss_on: bool = False
+        self.weight_n: float = 0.01
+        self.ekional_loss_on: bool = False
+        self.weight_e: float = 1e-4
+        self.history_weight: float = 1.0
+
+        # optimizer
+        self.iters: int = 200
+        self.opt_adam: bool = True  # use adam or sgd
+        self.bs: int = 4096
+        self.lr: float = 1e-3
+        self.weight_decay: float = 0
+        self.adam_eps: float = 1e-15
+        self.lr_level_reduce_ratio: float = 1.0
+        self.lr_iters_reduce_ratio: float = 0.1
+        self.lr_decay_step: List = [10000, 50000, 100000]
+        self.dropout: float = 0
+
+        # eval
+        self.wandb_vis_on: bool = False
+        self.eval_on: bool = False
+        self.eval_outlier_thre = 0.5  # unit:m
+        self.eval_freq_iters: int = 100
+        self.vis_freq_iters: int = 100
+        self.save_freq_iters: int = 100
+        self.mesh_freq_frame: int = 1  # do the reconstruction per x frames
+        self.pad_voxel: int = 0
+        self.mc_res_m: float = 0.1
+        self.mc_vis_level: int = 1
+        self.infer_bs: int = 4096
+        self.occ_binary_mc: bool = False
+        self.grid_loss_vis_on: bool = False
+        self.mesh_vis_on: bool = True
+        self.save_map: bool = False
+
+        # initialization
+        self.scale: float = 1.0
+        self.world_size: float = 1.0
+
+    def load(self, config_file):
+        config_args = yaml.safe_load(open(os.path.abspath(config_file)))
+
+        # common
+        self.name = config_args["setting"]["name"] 
+        
+        self.output_root = config_args["setting"]["output_root"]  
+        self.pc_path = config_args["setting"]["pc_path"] 
+        self.pose_path = config_args["setting"]["pose_path"]
+        self.calib_path = config_args["setting"]["calib_path"] 
+
+        self.load_model = config_args["setting"]["load_model"]
+        self.model_path = config_args["setting"]["model_path"]
+        
+        self.first_frame_ref = config_args["setting"]["first_frame_ref"]
+        self.begin_frame = config_args["setting"]["begin_frame"]
+        self.end_frame = config_args["setting"]["end_frame"]
+        self.every_frame = config_args["setting"]["every_frame"]
+        
+        self.device = config_args["setting"]["device"]
+        self.gpu_id = config_args["setting"]["gpu_id"]
+
+        # process
+        self.pc_radius = config_args["process"]["pc_radius_m"]
+        self.rand_downsample = config_args["process"]["rand_downsample"]
+        self.vox_down_m = config_args["process"]["vox_down_m"]
+        self.rand_down_r = config_args["process"]["rand_down_r"]
+        self.estimate_normal = config_args["process"]["estimate_normal"]
+        self.filter_noise = config_args["process"]["filter_noise"]
+
+        # sampler
+        self.surface_sample_range_m = config_args["sampler"]["surface_sample_range_m"]
+        self.surface_sample_n = config_args["sampler"]["surface_sample_n"]
+        self.free_sample_begin_ratio = config_args["sampler"]["free_sample_begin_ratio"]
+        self.free_sample_end_ratio = config_args["sampler"]["free_sample_end_ratio"]
+        self.free_sample_n = config_args["sampler"]["free_sample_n"]
+
+        # label
+        # self.occu_update_on = config_args["label"]["occu_update_on"]
+        # use bayersian update of the occupancy prob. as the new label
+
+        # octree
+        self.tree_level_world = config_args["octree"]["tree_level_world"]
+        # the number of the total octree level (defining the world scale)
+        self.tree_level_feat = config_args["octree"][
+            "tree_level_feat"
+        ]  # the number of the octree level used for storing feature grid
+        self.leaf_vox_size = config_args["octree"][
+            "leaf_vox_size"
+        ]  # the size of the grid on octree's leaf level (unit: m)
+        self.feature_dim = config_args["octree"][
+            "feature_dim"
+        ]  # feature vector's dimension
+        # self.feature_std = config_args["octree"][
+        #     "feature_std"
+        # ]  # feature vector's initialization sigma (a zero mean, sigma standard deviation gaussian distribution)
+        self.poly_int_on = config_args["octree"][
+            "poly_int_on"
+        ]  # use polynomial or linear interpolation of feature grids
+        self.octree_from_surface_samples = config_args["octree"][
+            "octree_from_surface_samples"
+        ]  # build the octree from the surface samples or only the measurement points
+
+        # decoder
+        self.mlp_level = config_args["decoder"][
+            "mlp_level"
+        ]  # number of the level of the mlp decoder
+        self.mlp_hidden_dim = config_args["decoder"][
+            "mlp_hidden_dim"
+        ]  # dimension of the mlp's hidden layer
+        self.freeze_after_frame = config_args["decoder"]["freeze_after_frame"]
+
+        # loss
+        self.ray_loss = config_args["loss"]["ray_loss"]
+        self.main_loss_type = config_args["loss"]["main_loss_type"]
+        self.sigma_sigmoid_m = config_args["loss"]["sigma_sigmoid_m"]
+
+        self.loss_weight_on = config_args["loss"]["loss_weight_on"]
+        
+        self.behind_dropoff_on = config_args["loss"][
+            "behind_dropoff_on"
+        ]  # apply "behind the surface" loss weight drop-off or not
+
+        # self.normal_loss_on = config_args["loss"][
+        #     "normal_loss_on"
+        # ]  # use normal consistency loss [deprecated]
+        # self.weight_n = float(config_args["loss"]["weight_n"])
+        
+        self.ekional_loss_on = config_args["loss"][
+            "ekional_loss_on"
+        ]  # use ekional loss (gradient = 1 loss)
+        self.weight_e = float(config_args["loss"]["weight_e"])
+
+        
+        # continual learning
+        # using the regularization based continuous learning or the rehersal based continuous learning
+        self.continual_learning_reg = config_args["continual"]["continual_learning_reg"]
+        # the forgeting lambda for regularization based continual learning
+        self.lambda_forget = float(
+            config_args["continual"]["lambda_forget"]
+        ) 
+        
+        # # regularization based method
+        # # rehersal based method
+        # self.history_sample_ratio = float(
+        #     config_args["continuous"]["history_sample_ratio"]
+        # )  # sample the history samples by a scale of the number of current samples
+        # self.history_sample_res = config_args["continuous"][
+        #     "history_sample_res"
+        # ]  # the resolution of the kept history samples (unit: m)
+
+        # optimizer
+        self.iters = config_args["optimizer"][
+            "iters"
+        ]  # maximum iters (in our implementation, iters means iteration actually)
+        self.bs = config_args["optimizer"]["batch_size"]
+        # self.adam_eps = float(config_args["optimizer"]["adam_eps"])
+        self.lr = float(config_args["optimizer"]["learning_rate"])
+        # self.lr_level_reduce_ratio = config_args["optimizer"][
+        #     "lr_level_reduce_ratio"
+        # ]  # decay the learning rate for higher level of feature grids by such ratio
+        # self.lr_iters_reduce_ratio = config_args["optimizer"][
+        #     "lr_iters_reduce_ratio"
+        # ]  # decay the learning rate after certain iterss by such ratio
+        self.weight_decay = float(
+            config_args["optimizer"]["weight_decay"]
+        )  # coefficient for L2 regularization
+        
+
+        # vis and eval
+        self.wandb_vis_on = config_args["eval"][
+            "wandb_vis_on"
+        ]  # use weight and bias to monitor the experiment or not
+        self.eval_on = config_args["eval"][
+            "eval_on"
+        ]  # evaluate the model on the ground truth point cloud or not
+        self.eval_freq_iters = config_args["eval"][
+            "eval_freq_iters"
+        ]  # frequency for evaluation on ground truth point cloud for batch mode (per x iters)
+        self.vis_freq_iters = config_args["eval"][
+            "vis_freq_iters"
+        ]  # frequency for mesh reconstruction for batch mode (per x iters)
+        self.save_freq_iters = config_args["eval"][
+            "save_freq_iters"
+        ]  # frequency for model saving for batch mode (per x iters)
+        self.mesh_freq_frame = config_args["eval"][
+            "mesh_freq_frame"
+        ]  # frequency for mesh reconstruction for incremental mode (per x frame)
+        # self.pad_voxel = config_args["eval"]["pad_voxel"]
+        self.mc_res_m = config_args["eval"][
+            "mc_res_m"
+        ]  # marching cubes grid sampling interval (unit: m)
+        self.mc_vis_level = config_args["eval"][
+            "mc_vis_level"
+        ]  # tree level starting for reconstruction and visualization, the larger, the larger holes would be filled, and the more artifacts would appear at the boundary of the map
+        # self.grid_loss_vis_on = config_args["eval"][
+        #     "grid_loss_vis_on"
+        # ]  # visualize the loss at each grid position or not [deprecated]
+        # self.mesh_vis_on = config_args["eval"][
+        #     "mesh_vis_on"
+        # ]  # visualize the reconstructed mesh or not, if not, the mesh will still be exported and you can check it offline
+
+        self.calculate_world_scale()
+        self.infer_bs = self.bs * 16
+    
+    # calculate the scale for compressing the world into a [-1,1] kaolin cube
+    def calculate_world_scale(self):
+        self.world_size = self.leaf_vox_size*(2**(self.tree_level_world-1)) 
+        self.scale = 1.0 / self.world_size

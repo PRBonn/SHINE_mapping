@@ -1,0 +1,63 @@
+setting:
+  name: "maicity_batch"
+  output_root: "xxx/shine_mapping/experiments/"
+  pc_path: "xxx/data/mai_city/ply/sequences/01/velodyne"
+  pose_path: "xxx/data/mai_city/ply/sequences/01/poses.txt"
+  calib_path: "xxx/data/mai_city/ply/sequences/01/calib.txt"
+  load_model: False
+  model_path: "" 
+  first_frame_ref: False
+  begin_frame: 0
+  end_frame: 100
+  every_frame: 1 # 1 means does not skip
+  device: "cuda"
+  gpu_id: "0"
+process:
+  pc_radius_m: 30.0  # distance filter for each frame
+  rand_downsample: False # use random or voxel downsampling
+  vox_down_m: 0.05
+  rand_down_r: 0.2
+  filter_noise: False
+  estimate_normal: False
+sampler:
+  surface_sample_range_m: 0.2
+  surface_sample_n: 5
+  free_sample_begin_ratio: 0.3
+  free_sample_end_ratio: 1.1
+  free_sample_n: 3
+octree:
+  leaf_vox_size: 0.2
+  tree_level_world: 12
+  tree_level_feat: 3
+  feature_dim: 8
+  poly_int_on: True
+  octree_from_surface_samples: True
+decoder:
+  mlp_level: 2
+  mlp_hidden_dim: 32
+  freeze_after_frame: 0
+loss:
+  ray_loss: False
+  main_loss_type: sdf_bce  # select from sdf_bce (our proposed), sdf_l1, sdf_l2, dr, dr_neus
+  sigma_sigmoid_m: 0.05
+  loss_weight_on: False
+  behind_dropoff_on: False
+  ekional_loss_on: False
+  weight_e: 0.1
+continual:
+  continual_learning_reg: False
+  lambda_forget: 0
+optimizer:
+  iters: 20000
+  batch_size: 4096
+  learning_rate: 0.01
+  weight_decay: 1e-7 # l2 regularization
+eval:
+  wandb_vis_on: True # log to wandb or not
+  eval_on: False
+  eval_freq_iters: 10000
+  vis_freq_iters: 1000 # reconstruct the mesh every x iterations
+  save_freq_iters: 10000 # save the model and octree every x iterations
+  mesh_freq_frame: 1
+  mc_res_m: 0.1 # reconstruction marching cubes resolution
+  mc_vis_level: 1 

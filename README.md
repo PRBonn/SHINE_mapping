@@ -10,7 +10,6 @@ By [Xingguang Zhong](https://www.ipb.uni-bonn.de/people/xingguang-zhong/), [Yue 
 
 ![teaser_fig](https://user-images.githubusercontent.com/34207278/194295874-ccf02ed0-ad10-4451-acd2-e70001737ecf.png)
 
-
 ## Demo Video
 
 Incremental Mapping | Reconstruction Results |
