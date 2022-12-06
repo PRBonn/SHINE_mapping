@@ -36,7 +36,7 @@ class SHINEConfig:
         # self.sdf_trunc_m = 3 * self.voxel_size_m
 
         # process
-        self.min_range: float = 0.5 # filter too-close points (and 0 artifacts)
+        self.min_range: float = 2.75 # filter too-close points (and 0 artifacts)
         self.pc_radius: float = 20.0  # keep only the point cloud inside the
         # block with such radius (unit: m)
         self.min_z: float = -3.0  # filter for z coordinates (unit: m)
@@ -317,7 +317,12 @@ class SHINEConfig:
         ]  # marching cubes grid sampling interval (unit: m)
         self.mc_vis_level = config_args["eval"][
             "mc_vis_level"
-        ]  # tree level starting for reconstruction and visualization, the larger, the larger holes would be filled, and the more artifacts would appear at the boundary of the map
+        ] 
+        # tree level starting for reconstruction and visualization, the larger of this value, 
+        # the larger holes would be filled (better completion), but at the same time more artifacts 
+        # would appear at the boundary of the map
+        # it's a trading-off of the compeltion and the artifacts
+
         # self.grid_loss_vis_on = config_args["eval"][
         #     "grid_loss_vis_on"
         # ]  # visualize the loss at each grid position or not [deprecated]

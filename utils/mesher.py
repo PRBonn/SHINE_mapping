@@ -87,7 +87,7 @@ class Mesher():
         return mc_sdf, mc_mask
 
     
-    def mc_mesh(self, mc_sdf, mc_mask, voxel_size, mc_origin, estimate_normal = False):
+    def mc_mesh(self, mc_sdf, mc_mask, voxel_size, mc_origin):
         # the input are all already numpy arraies
         verts, faces, normals, values = np.zeros((0, 3)), np.zeros((0, 3)), np.zeros((0, 3)), np.zeros(0)
         try:       
@@ -104,18 +104,32 @@ class Mesher():
             o3d.utility.Vector3iVector(faces)
         )
 
-        if estimate_normal:
-            mesh.compute_vertex_normals()
-
         return mesh
 
-    def recon_bbx_mesh(self, bbx, voxel_size, mesh_path):
+    def recon_bbx_mesh(self, bbx, voxel_size, mesh_path, \
+        estimate_normal = True, filter_isolated_mesh = True):
         coord, voxel_num_xyz, voxel_origin = self.get_query_from_bbx(bbx, voxel_size)
         sdf_pred, mc_mask = self.query_sdf(coord, self.config.infer_bs)
         mc_sdf, mc_mask = self.assign_sdf_to_bbx(sdf_pred, mc_mask, voxel_num_xyz)
         mesh = self.mc_mesh(mc_sdf, mc_mask, voxel_size, voxel_origin)
 
+        if estimate_normal:
+            mesh.compute_vertex_normals()
+        
+        if filter_isolated_mesh:
+            filter_cluster_min_tri = 1000
+            # print("Cluster connected triangles")
+            triangle_clusters, cluster_n_triangles, cluster_area = (mesh.cluster_connected_triangles())
+            triangle_clusters = np.asarray(triangle_clusters)
+            cluster_n_triangles = np.asarray(cluster_n_triangles)
+            cluster_area = np.asarray(cluster_area)
+
+            print("Remove the small clusters")
+            mesh_0 = copy.deepcopy(mesh)
+            triangles_to_remove = cluster_n_triangles[triangle_clusters] < filter_cluster_min_tri
+            mesh_0.remove_triangles_by_mask(triangles_to_remove)
+            mesh = mesh_0
+
         # write the mesh to ply file
         o3d.io.write_triangle_mesh(mesh_path, mesh)
         print("save the mesh to %s\n" % (mesh_path))
-

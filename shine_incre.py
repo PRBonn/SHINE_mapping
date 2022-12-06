@@ -19,7 +19,7 @@ from model.feature_octree import FeatureOctree
 from model.decoder import Decoder
 from dataset.lidar_dataset import LiDARDataset
 
-def main():
+def run_shine_mapping_incremental():
 
     config = SHINEConfig()
     if len(sys.argv) > 1:
@@ -161,4 +161,4 @@ def main():
         processed_frame += 1
 
 if __name__ == "__main__":
-    main()
+    run_shine_mapping_incremental()

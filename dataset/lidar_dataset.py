@@ -163,11 +163,14 @@ class LiDARDataset(Dataset):
             self.sample_depth_pool = sample_depth
             self.ray_depth_pool = ray_depth        
         else: # batch processing
-            self.coord_pool = torch.cat((self.coord_pool, coord), 0)
-            self.sdf_label_pool = torch.cat((self.sdf_label_pool, sdf_label), 0)
+            self.coord_pool = torch.cat((self.coord_pool, coord), 0)            
             self.weight_pool = torch.cat((self.weight_pool, weight), 0)
-            self.sample_depth_pool = torch.cat((self.sample_depth_pool, sample_depth), 0)
-            self.ray_depth_pool = torch.cat((self.ray_depth_pool, ray_depth), 0)
+            
+            if self.config.ray_loss:
+                self.sample_depth_pool = torch.cat((self.sample_depth_pool, sample_depth), 0)
+                self.ray_depth_pool = torch.cat((self.ray_depth_pool, ray_depth), 0)
+            else:
+                self.sdf_label_pool = torch.cat((self.sdf_label_pool, sdf_label), 0)
 
             if normal_label is not None:
                 self.normal_label_pool = torch.cat((self.normal_label_pool, normal_label), 0)

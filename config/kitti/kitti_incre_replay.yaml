@@ -20,8 +20,8 @@ process:
   filter_noise: False
   estimate_normal: False
 sampler:
-  surface_sample_range_m: 0.2
-  surface_sample_n: 5
+  surface_sample_range_m: 0.3
+  surface_sample_n: 3
   free_sample_begin_ratio: 0.3
   free_sample_end_ratio: 1.1
   free_sample_n: 3
@@ -39,7 +39,7 @@ decoder:
 loss:
   ray_loss: False
   main_loss_type: sdf_bce  # select from sdf_bce (our proposed), sdf_l1, sdf_l2, dr, dr_neus
-  sigma_sigmoid_m: 0.05
+  sigma_sigmoid_m: 0.1
   loss_weight_on: False
   behind_dropoff_on: False
   ekional_loss_on: False

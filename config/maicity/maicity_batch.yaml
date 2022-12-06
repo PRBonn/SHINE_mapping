@@ -13,7 +13,7 @@ setting:
   device: "cuda"
   gpu_id: "0"
 process:
-  pc_radius_m: 30.0  # distance filter for each frame
+  pc_radius_m: 25.0  # distance filter for each frame
   rand_downsample: False # use random or voxel downsampling
   vox_down_m: 0.05
   rand_down_r: 0.2
@@ -21,7 +21,7 @@ process:
   estimate_normal: False
 sampler:
   surface_sample_range_m: 0.2
-  surface_sample_n: 5
+  surface_sample_n: 3
   free_sample_begin_ratio: 0.3
   free_sample_end_ratio: 1.1
   free_sample_n: 3
@@ -56,8 +56,8 @@ eval:
   wandb_vis_on: True # log to wandb or not
   eval_on: False
   eval_freq_iters: 10000
-  vis_freq_iters: 1000 # reconstruct the mesh every x iterations
+  vis_freq_iters: 5000 # reconstruct the mesh every x iterations
   save_freq_iters: 10000 # save the model and octree every x iterations
-  mesh_freq_frame: 1
+  mesh_freq_frame: 1 
   mc_res_m: 0.1 # reconstruction marching cubes resolution
-  mc_vis_level: 1 
+  mc_vis_level: 1 # mask the voxels used for marching cubes reconstruction according to the octree level

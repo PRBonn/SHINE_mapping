@@ -1,5 +1,5 @@
 setting:
-  name: "maicity_batch"
+  name: "maicity_incre_replay"
   output_root: "xxx/shine_mapping/experiments/"
   pc_path: "xxx/data/mai_city/ply/sequences/01/velodyne"
   pose_path: "xxx/data/mai_city/ply/sequences/01/poses.txt"
@@ -13,7 +13,7 @@ setting:
   device: "cuda"
   gpu_id: "0"
 process:
-  pc_radius_m: 30.0  # distance filter for each frame
+  pc_radius_m: 25.0  # distance filter for each frame
   rand_downsample: False # use random or voxel downsampling
   vox_down_m: 0.05
   rand_down_r: 0.2
@@ -21,7 +21,7 @@ process:
   estimate_normal: False
 sampler:
   surface_sample_range_m: 0.2
-  surface_sample_n: 5
+  surface_sample_n: 3
   free_sample_begin_ratio: 0.3
   free_sample_end_ratio: 1.1
   free_sample_n: 3
