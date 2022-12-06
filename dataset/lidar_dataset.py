@@ -20,9 +20,10 @@ class LiDARDataset(Dataset):
 
         super().__init__()
 
-        # torch.set_default_dtype(torch.float32)
-
         self.config = config
+        self.dtype = config.dtype
+        torch.set_default_dtype(self.dtype)
+
         self.calib = read_calib_file(config.calib_path)
         self.poses_w = read_poses_file(config.pose_path, self.calib)
 
@@ -90,7 +91,7 @@ class LiDARDataset(Dataset):
 
         self.cur_pose_ref = self.poses_ref[frame_id]
         frame_origin = self.cur_pose_ref[:3, 3] * self.config.scale  # translation part
-        frame_origin_torch = torch.tensor(frame_origin, device=dev)
+        frame_origin_torch = torch.tensor(frame_origin, dtype=self.dtype, device=dev)
 
         # load point cloud (support *pcd, *ply and kitti *bin format)
         frame_filename = os.path.join(self.config.pc_path, self.pc_filenames[frame_id])
@@ -136,13 +137,11 @@ class LiDARDataset(Dataset):
         # and scale to [-1,1] coordinate system
         frame_pc_s = frame_pc.scale(self.config.scale, np.zeros(3))
 
-        frame_pc_s_torch = torch.tensor(np.asarray(frame_pc_s.points), device=dev)
+        frame_pc_s_torch = torch.tensor(np.asarray(frame_pc_s.points), dtype=self.dtype, device=dev)
 
         frame_normal_torch = None
         if self.config.estimate_normal:
-            frame_normal_torch = torch.tensor(
-                np.asarray(frame_pc_s.normals), device=dev
-            )
+            frame_normal_torch = torch.tensor(np.asarray(frame_pc_s.normals), dtype=self.dtype, device=dev)
 
         frame_label_torch = None
         # load the label from the color channel of frame_pc (TODO)
@@ -165,7 +164,6 @@ class LiDARDataset(Dataset):
         else: # batch processing
             self.coord_pool = torch.cat((self.coord_pool, coord), 0)            
             self.weight_pool = torch.cat((self.weight_pool, weight), 0)
-            
             if self.config.ray_loss:
                 self.sample_depth_pool = torch.cat((self.sample_depth_pool, sample_depth), 0)
                 self.ray_depth_pool = torch.cat((self.ray_depth_pool, ray_depth), 0)
@@ -186,8 +184,6 @@ class LiDARDataset(Dataset):
         else:
             # update with the original points
             self.octree.update(frame_pc_s_torch.to("cuda"), incremental_on)  
-
-        # add the incremental version
 
     def read_point_cloud(self, filename: str):
         # read point cloud from either (*.ply, *.pcd) or (kitti *.bin) format

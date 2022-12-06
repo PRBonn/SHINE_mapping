@@ -11,7 +11,6 @@ class dataSampler():
     def __init__(self, config: SHINEConfig):
 
         self.config = config
-        #self.map_points = torch.tensor([],device=config.device)
 
 
     # input and output are all torch tensors
@@ -133,7 +132,7 @@ class dataSampler():
         # distances = torch.linalg.norm(shift_points, dim=1, keepdim=True)
         spc = kal.ops.conversions.unbatched_pointcloud_to_spc(shift_points, space_carving_level)
 
-        shift_points_directions = (shift_points/(shift_points**2).sum(1).sqrt().reshape(-1,1)).float()
+        shift_points_directions = (shift_points/(shift_points**2).sum(1).sqrt().reshape(-1,1))
         virtual_origin = -shift_points_directions*3
             
         octree, point_hierarchy, pyramid, prefix = spc.octrees, spc.point_hierarchies, spc.pyramids[0], spc.exsum
