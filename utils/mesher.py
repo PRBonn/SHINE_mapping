@@ -1,6 +1,5 @@
 import numpy as np
 from tqdm import tqdm
-import trimesh 
 import skimage.measure
 import time
 import torch

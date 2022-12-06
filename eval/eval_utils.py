@@ -1,6 +1,6 @@
 # This file is derived from [Atlas](https://github.com/magicleap/Atlas).
 # Originating Author: Zak Murez (zak.murez.com)
-# Modified for [NeuralOctomap] by Yue Pan.
+# Modified for [SHINEMapping] by Yue Pan.
 
 # Original header:
 # Copyright 2020 Magic Leap, Inc.

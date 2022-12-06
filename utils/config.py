@@ -1,5 +1,6 @@
 import yaml
 import os
+import torch
 from typing import List
 
 class SHINEConfig:
@@ -27,6 +28,7 @@ class SHINEConfig:
         self.num_workers: int = 12 # number of worker for the dataloader
         self.device: str = "cuda"  # use "cuda" or "cpu"
         self.gpu_id: str = "0"  # used GPU id
+        self.dtype = torch.float32 # default torch tensor data type
 
         # baseline
         # self.run_baseline = False
