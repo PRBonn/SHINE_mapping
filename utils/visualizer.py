@@ -8,7 +8,6 @@ from typing import Callable, List
 
 import numpy as np
 import open3d as o3d
-from trimesh import transform_points
 
 YELLOW = np.array([1, 0.706, 0])
 RED = np.array([128, 0, 0]) / 255.0

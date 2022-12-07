@@ -34,7 +34,7 @@ conda activate shine
 ```
 ### 3. Install the key requirement kaolin
 
-Follow the [instructions](https://kaolin.readthedocs.io/en/latest/notes/installation.html) to install [kaolin](https://kaolin.readthedocs.io/en/latest/index.html). First clone kaolin to local directory:
+Follow the [instructions](https://kaolin.readthedocs.io/en/latest/notes/installation.html) to install [kaolin](https://kaolin.readthedocs.io/en/latest/index.html). First, clone kaolin to local directory:
 
 ```
 git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
@@ -55,6 +55,7 @@ python setup.py develop
 
 Use ```python -c "import kaolin; print(kaolin.__version__)"``` to check if kaolin is successfully installed.
 
+
 ### 4. Install the other requirements
 ```
 pip install open3d wandb
@@ -65,30 +66,37 @@ conda install scikit-image
 
 Generally speaking, we only need to provide:
 1. the folder containing the point cloud (`.bin`, `.ply` or `.pcd` format) for each frame.
-2. the pose file (`.txt`) containing the transformation matrix of each frame.
+2. the pose file (`.txt`) containing the transformation matrix of each frame. 
 3. the calib file (`.txt`) containing the static transformation between sensor and body frames.
 
 They all follow the [KITTI odometry data format](https://www.cvlibs.net/datasets/kitti/eval_odometry.php).
 
+After preparing the data, you need to correctly set the data path (`pc_path`, `pose_path` and `calib_path`) in the config files under `config` folder.
+
+Our method is currently a mapping-with-known-pose system. If you do not have the ground truth pose file, you may use a LiDAR odometry system such as [KISS-ICP](https://github.com/PRBonn/kiss-icp) to easily estimate the pose. Under such case, you do not need a calib file, so just set `calib_path: ""` in the config file.
+
+Here, we provide the link to several public available datasets for testing SHINE Mapping:
+
 ### MaiCity synthetic LiDAR dataset
 
-Download the dataset from [here](https://www.ipb.uni-bonn.de/data/mai-city-dataset/)(3.4G) or use the following command in a target data folder:
+Download the dataset from [here](https://www.ipb.uni-bonn.de/data/mai-city-dataset/) (3.4G) or use the following script in a target data folder:
 
 ```
-wget https://www.ipb.uni-bonn.de/html/projects/mai_city/mai_city.tar.gz
-tar -xvf mai_city.tar.gz
+sh ./scripts/download_maicity.sh
 ```
 
 ### KITTI real-world LiDAR dataset
 
-Download the dataset from [here](https://www.cvlibs.net/datasets/kitti/eval_odometry.php)(80G).
+Download the dataset from [here](https://www.cvlibs.net/datasets/kitti/eval_odometry.php) (80G).
 
 ### Newer College real-world LiDAR dataset
 
-Download the dataset from [here]().
+Download the dataset from [here](https://ori-drs.github.io/newer-college-dataset/download/).
 
-
-After downloading the data, you need to correctly set the data path (`pc_path`, `pose_path` and `calib_path`) in the config files under `config` folder.
+If you want to use an exmaple part of the dataset for the test, you can use the following script:
+```
+sh ./scripts/download_ncd_example.sh
+```
 
 ## Run
 
