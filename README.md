@@ -87,11 +87,17 @@ sh ./scripts/download_maicity.sh
 
 ### KITTI real-world LiDAR dataset
 
-Download the dataset from [here](https://www.cvlibs.net/datasets/kitti/eval_odometry.php) (80G).
+Download the full dataset from [here](https://www.cvlibs.net/datasets/kitti/eval_odometry.php) (80G).
+
+
+If you want to use an exmaple part of the dataset for the test, you can use the following script:
+```
+sh ./scripts/download_kitti_example.sh
+```
 
 ### Newer College real-world LiDAR dataset
 
-Download the dataset from [here](https://ori-drs.github.io/newer-college-dataset/download/).
+Download the full dataset from [here](https://ori-drs.github.io/newer-college-dataset/download/).
 
 If you want to use an exmaple part of the dataset for the test, you can use the following script:
 ```

@@ -23,23 +23,24 @@ def setup_experiment(config: SHINEConfig):
     os.environ["CUDA_VISIBLE_DEVICES"] = str(config.gpu_id)
     ts = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")  # begining timestamp
     run_name = config.name + "_" + ts  # modified to a name that is easier to index
-    run_path = os.path.join(config.output_root, run_name)
-    if not os.path.exists(run_path):
-        os.mkdir(run_path)
-        assert os.access(run_path, os.W_OK)
-        print(f"Start {run_path}")
-        if config.wandb_vis_on:
-            # set up wandb
-            setup_wandb()
-            wandb.init(project="SHINEMapping", config=vars(config), dir=run_path) # your own worksapce
-            wandb.run.name = run_name
         
-        mesh_path = os.path.join(run_path, "mesh")
-        map_path = os.path.join(run_path, "map")
-        model_path = os.path.join(run_path, "model")
-        os.mkdir(mesh_path)
-        os.mkdir(map_path)
-        os.mkdir(model_path)
+    run_path = os.path.join(config.output_root, run_name)
+    os.makedirs(run_path, exist_ok=True)
+    assert os.access(run_path, os.W_OK)
+    print(f"Start {run_path}")
+
+    mesh_path = os.path.join(run_path, "mesh")
+    map_path = os.path.join(run_path, "map")
+    model_path = os.path.join(run_path, "model")
+    os.mkdir(mesh_path)
+    os.mkdir(map_path)
+    os.mkdir(model_path)
+    
+    if config.wandb_vis_on:
+        # set up wandb
+        setup_wandb()
+        wandb.init(project="SHINEMapping", config=vars(config), dir=run_path) # your own worksapce
+        wandb.run.name = run_name         
 
     return run_path
 
@@ -69,6 +70,7 @@ def setup_optimizer(config: SHINEConfig, octree_feat, mlp_param, sigma_size) -> 
 
 # set up weight and bias
 def setup_wandb():
+    print("Weight & Bias logging option is on. Disable it by setting  wandb_vis_on: False  in the config file.")
     username = getpass.getuser()
     print(username)
     wandb_key_path = username + "_wandb.key"
@@ -81,7 +83,6 @@ def setup_wandb():
     else:
         print("wandb key already set")
     os.system('export WANDB_API_KEY=$(cat "' + wandb_key_path + '")')
-
 
 def step_lr_decay(
     optimizer: Optimizer,
