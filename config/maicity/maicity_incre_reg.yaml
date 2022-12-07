@@ -53,7 +53,7 @@ optimizer:
   learning_rate: 0.01
   weight_decay: 1e-7 # l2 regularization
 eval:
-  wandb_vis_on: True # log to wandb or not
+  wandb_vis_on: False # log to wandb or not
   eval_on: False
   eval_freq_iters: 10000
   vis_freq_iters: 0 

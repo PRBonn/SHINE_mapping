@@ -24,7 +24,11 @@ class LiDARDataset(Dataset):
         self.dtype = config.dtype
         torch.set_default_dtype(self.dtype)
 
-        self.calib = read_calib_file(config.calib_path)
+        self.calib = {}
+        if config.calib_path != '':
+            self.calib = read_calib_file(config.calib_path)
+        else:
+            self.calib['Tr'] = np.eye(4)
         self.poses_w = read_poses_file(config.pose_path, self.calib)
 
         # pose in the reference frame (might be the first frame used)

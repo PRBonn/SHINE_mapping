@@ -154,14 +154,14 @@ def run_shine_mapping_batch():
             wandb.log(wandb_log_content)
 
         # save checkpoint model
-        if ((iter % config.save_freq_iters) == 0 and iter > 0):
-            checkpoint_name = 'model/model_iter_' + str(iter)
+        if (((iter+1) % config.save_freq_iters) == 0 and iter > 0):
+            checkpoint_name = 'model/model_iter_' + str(iter+1)
             save_checkpoint(octree, mlp, opt, run_path, checkpoint_name, iter)
 
         # reconstruction by marching cubes
-        if ((iter % config.vis_freq_iters) == 0 and iter > 0): 
+        if (((iter+1) % config.vis_freq_iters) == 0 and iter > 0): 
             # print("Begin reconstruction from implicit map")               
-            mesh_path = run_path + '/mesh/mesh_iter_' + str(iter) + ".ply"
+            mesh_path = run_path + '/mesh/mesh_iter_' + str(iter+1) + ".ply"
             mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path)
 
         # evaluation

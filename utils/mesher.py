@@ -1,7 +1,6 @@
 import numpy as np
 from tqdm import tqdm
 import skimage.measure
-import time
 import torch
 import math
 import open3d as o3d
@@ -10,7 +9,6 @@ import kaolin as kal
 from utils.config import SHINEConfig
 from model.feature_octree import FeatureOctree
 from model.decoder import Decoder
-
 
 class Mesher():
 
@@ -21,6 +19,7 @@ class Mesher():
         self.octree = octree
         self.decoder = decoder
         self.device = config.device
+        self.dtype = config.dtype
         self.world_scale = config.scale
     
     def query_sdf(self, coord, bs):
@@ -63,9 +62,9 @@ class Mesher():
         voxel_num_xyz = (np.ceil(len_xyz/voxel_size)+self.config.pad_voxel*2).astype(np.int_)
         voxel_origin = min_bound-self.config.pad_voxel*voxel_size
 
-        x = torch.arange(voxel_num_xyz[0], dtype=torch.long, device=self.device)
-        y = torch.arange(voxel_num_xyz[1], dtype=torch.long, device=self.device)
-        z = torch.arange(voxel_num_xyz[2], dtype=torch.long, device=self.device)
+        x = torch.arange(voxel_num_xyz[0], dtype=torch.int16, device=self.device)
+        y = torch.arange(voxel_num_xyz[1], dtype=torch.int16, device=self.device)
+        z = torch.arange(voxel_num_xyz[2], dtype=torch.int16, device=self.device)
 
         # order: [0,0,0], [0,0,1], [0,0,2], [0,1,0], [0,1,1], [0,1,2] ...
         x, y, z = torch.meshgrid(x, y, z, indexing='ij') 
@@ -73,7 +72,7 @@ class Mesher():
         coord = torch.stack((x.flatten(), y.flatten(), z.flatten())).transpose(0, 1).float()
         # transform to world coordinate system
         coord *= voxel_size
-        coord += torch.tensor(voxel_origin, device=self.device)
+        coord += torch.tensor(voxel_origin, dtype=self.dtype, device=self.device)
         # scaling to the [-1, 1] coordinate system
         coord *= self.world_scale
         

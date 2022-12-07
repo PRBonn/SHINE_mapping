@@ -72,7 +72,7 @@ def setup_optimizer(config: SHINEConfig, octree_feat, mlp_param, sigma_size) -> 
 def setup_wandb():
     print("Weight & Bias logging option is on. Disable it by setting  wandb_vis_on: False  in the config file.")
     username = getpass.getuser()
-    print(username)
+    # print(username)
     wandb_key_path = username + "_wandb.key"
     if not os.path.exists(wandb_key_path):
         wandb_key = input(

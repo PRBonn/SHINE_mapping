@@ -71,7 +71,7 @@ Generally speaking, we only need to provide:
 
 They all follow the [KITTI odometry data format](https://www.cvlibs.net/datasets/kitti/eval_odometry.php).
 
-After preparing the data, you need to correctly set the data path (`pc_path`, `pose_path` and `calib_path`) in the config files under `config` folder.
+After preparing the data, you need to correctly set the data path (`pc_path`, `pose_path` and `calib_path`) in the config files under `config` folder. You also need to set a path `output_root` to store the experiment results and logs.
 
 Our method is currently a mapping-with-known-pose system. If you do not have the ground truth pose file, you may use a LiDAR odometry system such as [KISS-ICP](https://github.com/PRBonn/kiss-icp) to easily estimate the pose. Under such case, you do not need a calib file, so just set `calib_path: ""` in the config file.
 
@@ -79,7 +79,7 @@ Here, we provide the link to several public available datasets for testing SHINE
 
 ### MaiCity synthetic LiDAR dataset
 
-Download the dataset from [here](https://www.ipb.uni-bonn.de/data/mai-city-dataset/) (3.4G) or use the following script in a target data folder:
+Download the dataset from [here](https://www.ipb.uni-bonn.de/data/mai-city-dataset/) or use the following script to download (3.4GB):
 
 ```
 sh ./scripts/download_maicity.sh
@@ -87,10 +87,9 @@ sh ./scripts/download_maicity.sh
 
 ### KITTI real-world LiDAR dataset
 
-Download the full dataset from [here](https://www.cvlibs.net/datasets/kitti/eval_odometry.php) (80G).
+Download the full dataset from [here](https://www.cvlibs.net/datasets/kitti/eval_odometry.php).
 
-
-If you want to use an exmaple part of the dataset for the test, you can use the following script:
+If you want to use an exmaple part of the dataset (seq 00) for the test, you can use the following script to download (117 MB):
 ```
 sh ./scripts/download_kitti_example.sh
 ```
@@ -99,30 +98,34 @@ sh ./scripts/download_kitti_example.sh
 
 Download the full dataset from [here](https://ori-drs.github.io/newer-college-dataset/download/).
 
-If you want to use an exmaple part of the dataset for the test, you can use the following script:
+If you want to use an exmaple part of the dataset (Quad) for the test, you can use the following script to download (634 MB):
 ```
 sh ./scripts/download_ncd_example.sh
 ```
 
 ## Run
 
+We take the MaiCity dataset as an example to show how SHINE Mapping works. You can simply replace maicity with your dataset name in the config file path, such as `./config/[dataset]/[dataset]_[xxx].yaml`.
+
+
 For batch processing based mapping, use:
 ```
-python shine_batch.py ./config/[dataset_name]/[dataset_name]_batch.yaml
+python shine_batch.py ./config/maicity/maicity_batch.yaml
 ```
 
 For incremental mapping with regularization, use:
 ```
-python shine_incre.py ./config/[dataset_name]/[dataset_name]_incre_reg.yaml
+python shine_incre.py ./config/maicity/maicity_incre_reg.yaml
 ```
 
 For incremental mapping with replay, use:
 ```
-python shine_incre.py ./config/[dataset_name]/[dataset_name]_incre_replay.yaml
+python shine_incre.py ./config/maicity/maicity_incre_replay.yaml
 ```
 
-The results will be stored in the `output_root` directory as you set in the config file.
-The logs can be monitored via Weight & Bias online if you turn the `wandb_vis_on` option on. 
+The results will be stored with your experiment name with the starting timestamp in the `output_root` directory as what you set in the config file. You can find the reconstructed mesh (`*.ply` format) and optimized model in `mesh` and `model` folder, respectively.
+
+The logs can be monitored via [Weights & Bias](https://wandb.ai/site) online if you turn the `wandb_vis_on` option on. If it's your first time to use Weights & Bias, you would be requested to register and login to your wandb account. 
 
 ## Evaluation
 
@@ -130,9 +133,32 @@ TBD
 
 ----
 
+## Citation
+If you use SHINE Mapping for any academic work, please cite our original paper.
+```
+@article{zhong2022arxiv,
+  title={SHINE-Mapping: Large-Scale 3D Mapping Using Sparse Hierarchical Implicit NEural Representations},
+  author={Zhong, Xingguang and Pan, Yue and Behley, Jens and Stachniss, Cyrill},
+  journal={arXiv preprint arXiv:2210.02299},
+  year={2022}
+}
+```
+
+## Contact
+If you have any questions, please contact:
+
+- Xingguang Zhong {[zhong@igg.uni-bonn.de]()}
+- Yue Pan {[yue.pan@igg.uni-bonn.de]()}
+
 ## Acknowledgment
 This work has partially been funded by the European Union’s HORIZON programme under grant agreement No 101070405 (DigiForest).
 
+Additional, we thanks greatly for the authors of the following opensource projects:
+
+- [NGLOD](https://github.com/nv-tlabs/nglod) (octree based hierarchical feature structure built based on [kaolin](https://kaolin.readthedocs.io/en/latest/index.html)) 
+- [VDBFusion](https://github.com/PRBonn/vdbfusion) (comparison baseline)
+- [Voxblox](https://github.com/ethz-asl/voxblox) (comparison baseline)
+- [Puma](https://github.com/PRBonn/puma) (comparison baseline and the MaiCity dataset)
 
 
 

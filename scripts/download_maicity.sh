@@ -9,4 +9,6 @@ wget https://www.ipb.uni-bonn.de/html/projects/mai_city/mai_city.tar.gz
 echo Extracting dataset...
 tar -xvf mai_city.tar.gz
 
+rm mai_city.tar.gz
+
 cd ../..

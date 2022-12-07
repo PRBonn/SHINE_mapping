@@ -1,19 +1,19 @@
 setting:
   name: "ncd_batch"
   output_root: "xxx/shine_mapping/experiments/"
-  pc_path: "xxx/data/ncd/sequences/02/pcd"
-  pose_path: "xxx/data/ncd/sequences/02/poses.txt"
-  calib_path: "xxx/data/ncd/sequences/02/calib.txt"
+  pc_path: "xxx/data/ncd_example/quad/pcd"
+  pose_path: "xxx/data/ncd_example/quad/poses.txt"
+  calib_path: "xxx/data/ncd_example/quad/calib.txt"
   load_model: False
   model_path: "" 
   first_frame_ref: False
-  begin_frame: 500
-  end_frame: 1500
+  begin_frame: 0
+  end_frame: 1300
   every_frame: 5 # 1 means does not skip
   device: "cuda"
   gpu_id: "0"
 process:
-  pc_radius_m: 25.0  # distance filter for each frame
+  pc_radius_m: 40.0  # distance filter for each frame
   rand_downsample: False # use random or voxel downsampling
   vox_down_m: 0.05
   rand_down_r: 0.2
@@ -53,7 +53,7 @@ optimizer:
   learning_rate: 0.01
   weight_decay: 1e-7 # l2 regularization
 eval:
-  wandb_vis_on: True # log to wandb or not
+  wandb_vis_on: False # log to wandb or not
   eval_on: False
   eval_freq_iters: 10000
   vis_freq_iters: 5000 # reconstruct the mesh every x iterations

@@ -142,7 +142,7 @@ def run_shine_mapping_incremental():
         if processed_frame == 0 or (processed_frame+1) % config.mesh_freq_frame == 0:
             vis_mesh = True 
             # print("Begin reconstruction from implicit mapn")               
-            mesh_path = run_path + '/mesh/mesh_frame_' + str(frame_id) + ".ply"
+            mesh_path = run_path + '/mesh/mesh_frame_' + str(frame_id+1) + ".ply"
             mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path)
 
         T3 = get_time()
