@@ -108,7 +108,7 @@ SHINE Mapping also supports the mapping on RGB-D datasets. You may firstly try t
 sh ./scripts/download_neural_rgbd_data.sh
 ```
 
-After downloading the data, you need to firstly convert the dataset to the KITTI format by using for each sequence:
+After downloading the data, you need to convert the dataset to the KITTI format by using for each sequence:
 ```
 sh ./scripts/convert_rgbd_to_kitti_format.sh
 ```
