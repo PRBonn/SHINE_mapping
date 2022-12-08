@@ -146,9 +146,9 @@ python shine_batch.py ./config/maicity/maicity_batch.yaml
 <details>
   <summary>[Expected results (click to expand)]</summary>
 
-![](https://user-images.githubusercontent.com/34207278/206579093-8ba92baa-2b98-462a-b92d-ce3eff8ede64.mp4 | width=500)
-
-
+<p align="center">
+  <video src="https://user-images.githubusercontent.com/34207278/206579093-8ba92baa-2b98-462a-b92d-ce3eff8ede64.mp4" width="10%" />
+</p>
 
 </details>
 
@@ -163,9 +163,9 @@ python shine_incre.py ./config/maicity/maicity_incre_reg.yaml
 
 For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree.
 
-![](https://user-images.githubusercontent.com/34207278/206582367-f2f4a66a-83f8-4a90-a2db-e104b5985bdd.mp4 | width=500)
-
-
+<p align="center">
+  <video src="https://user-images.githubusercontent.com/34207278/206582367-f2f4a66a-83f8-4a90-a2db-e104b5985bdd.mp4" width="10%" />
+</p>
 
 </details>
 
@@ -178,8 +178,9 @@ python shine_incre.py ./config/maicity/maicity_incre_replay.yaml
 
 For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree.
 
-![](https://user-images.githubusercontent.com/34207278/206581857-0b38bf26-ef00-4983-a903-4a58ae7ff001.mp4 | width=500)
-
+<p align="center">
+  <video src="https://user-images.githubusercontent.com/34207278/206581857-0b38bf26-ef00-4983-a903-4a58ae7ff001.mp4" width="10%" />
+</p>
 
 </details>
 
