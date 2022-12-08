@@ -16,7 +16,7 @@ Incremental Mapping | Reconstruction Results |
 :-: | :-: |
 <video src='https://user-images.githubusercontent.com/34207278/192112474-f88d0d90-96a4-4ff3-b3bb-4e119b810d9e.mp4'> | <video src='https://user-images.githubusercontent.com/34207278/192112449-56cb5c73-500f-416a-8892-e44d0e962669.mp4'> |
 
-
+  
 ## Abstract
 Accurate mapping of large-scale environments is an essential building block of most outdoor autonomous systems. Challenges of traditional mapping methods include the balance between memory consumption and mapping accuracy. This paper addresses the problems of achieving large-scale 3D reconstructions with implicit representations using 3D LiDAR measurements. We learn and store implicit features through an octree-based hierarchical structure, which is sparse and extensible. The features can be turned into signed distance values through a shallow neural network. We leverage binary cross entropy loss to optimize the local features with the 3D measurements as supervision. Based on our implicit representation, we design an incremental mapping system with regularization to tackle the issue of catastrophic forgetting in continual learning. Our experiments show that our 3D reconstructions are more accurate, complete, and memory-efficient than current state-of-the-art 3D mapping methods.
 
@@ -141,15 +141,38 @@ For batch processing based mapping, use:
 python shine_batch.py ./config/maicity/maicity_batch.yaml
 ```
 
+<details>
+  <summary>[Expected results (click to expand)]</summary>
+
+https://user-images.githubusercontent.com/34207278/206579093-8ba92baa-2b98-462a-b92d-ce3eff8ede64.mp4
+
+</details>
+
+
 For incremental mapping with regularization, use:
 ```
 python shine_incre.py ./config/maicity/maicity_incre_reg.yaml
 ```
 
+<details>
+  <summary>[Expected results (click to expand)]</summary>
+For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree.
+  
+https://user-images.githubusercontent.com/34207278/206582367-f2f4a66a-83f8-4a90-a2db-e104b5985bdd.mp4
+
+</details>
+
 For incremental mapping with replay, use:
 ```
 python shine_incre.py ./config/maicity/maicity_incre_replay.yaml
 ```
+<details>
+  <summary>[Expected results (click to expand)]</summary>
+For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree.
+  
+https://user-images.githubusercontent.com/34207278/206581857-0b38bf26-ef00-4983-a903-4a58ae7ff001.mp4
+
+</details>
 
 The results will be stored with your experiment name with the starting timestamp in the `output_root` directory as what you set in the config file. You can find the reconstructed mesh (`*.ply` format) and optimized model in `mesh` and `model` folder, respectively.
 
