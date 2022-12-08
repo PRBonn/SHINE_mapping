@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import wandb
+import open3d as o3d
 
 from utils.config import SHINEConfig
 
@@ -32,15 +33,17 @@ def setup_experiment(config: SHINEConfig):
     mesh_path = os.path.join(run_path, "mesh")
     map_path = os.path.join(run_path, "map")
     model_path = os.path.join(run_path, "model")
-    os.mkdir(mesh_path)
-    os.mkdir(map_path)
-    os.mkdir(model_path)
+    os.makedirs(mesh_path, os.W_OK)
+    os.makedirs(map_path, os.W_OK)
+    os.makedirs(model_path, os.W_OK)
     
     if config.wandb_vis_on:
         # set up wandb
         setup_wandb()
         wandb.init(project="SHINEMapping", config=vars(config), dir=run_path) # your own worksapce
         wandb.run.name = run_name         
+    
+    # o3d.utility.random.seed(42)
 
     return run_path
 
@@ -52,7 +55,8 @@ def setup_optimizer(config: SHINEConfig, octree_feat, mlp_param, sigma_size) -> 
     mlp_param_opt_dict = {'params': mlp_param, 'lr': lr_cur, 'weight_decay': config.weight_decay} 
     opt_setting.append(mlp_param_opt_dict)
     for i in range(config.tree_level_feat):
-        feat_opt_dict = {'params': octree_feat[config.tree_level_feat-i-1], 'lr': lr_cur}
+        # try to also add L2 regularization on the feature octree (results not quite good)
+        feat_opt_dict = {'params': octree_feat[config.tree_level_feat-i-1], 'lr': lr_cur} 
         lr_cur *= config.lr_level_reduce_ratio
         opt_setting.append(feat_opt_dict)
     # make sigma also learnable for differentiable rendering (but not for our method)

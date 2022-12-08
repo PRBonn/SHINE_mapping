@@ -62,6 +62,9 @@ def run_shine_mapping_batch():
     # fixed sigma for sdf prediction supervised with BCE loss
     sigma_sigmoid = config.logistic_gaussian_ratio*config.sigma_sigmoid_m*config.scale
     
+    pc_map_path = run_path + '/map/pc_map_down.ply'
+    dataset.write_merged_pc(pc_map_path)
+
     # initialize the optimizer
     opt = setup_optimizer(config, octree_feat, mlp_param, sigma_size)
 
@@ -160,7 +163,7 @@ def run_shine_mapping_batch():
 
         # reconstruction by marching cubes
         if (((iter+1) % config.vis_freq_iters) == 0 and iter > 0): 
-            # print("Begin reconstruction from implicit map")               
+            print("Begin mesh reconstruction from the implicit map")               
             mesh_path = run_path + '/mesh/mesh_iter_' + str(iter+1) + ".ply"
             mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path)
 

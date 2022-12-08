@@ -122,7 +122,7 @@ class Mesher():
             cluster_n_triangles = np.asarray(cluster_n_triangles)
             cluster_area = np.asarray(cluster_area)
 
-            print("Remove the small clusters")
+            # print("Remove the small clusters")
             mesh_0 = copy.deepcopy(mesh)
             triangles_to_remove = cluster_n_triangles[triangle_clusters] < filter_cluster_min_tri
             mesh_0.remove_triangles_by_mask(triangles_to_remove)

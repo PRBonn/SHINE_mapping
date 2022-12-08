@@ -7,6 +7,8 @@ import copy
 import torch
 from torch.utils.data import Dataset
 import open3d as o3d
+from kiss_icp.datasets import dataset_factory
+from kiss_icp.pipeline import OdometryPipeline
 
 from utils.config import SHINEConfig
 from utils.pose import read_calib_file, read_poses_file
@@ -133,7 +135,7 @@ class LiDARDataset(Dataset):
         frame_pc = frame_pc.transform(self.cur_pose_ref)
         # make a backup for merging into the map point cloud
         frame_pc_clone = copy.deepcopy(frame_pc)
-        frame_pc_clone = frame_pc_clone.voxel_down_sample(voxel_size=0.1) # for smaller memory cost
+        frame_pc_clone = frame_pc_clone.voxel_down_sample(voxel_size=self.config.map_vox_down_m) # for smaller memory cost
         self.map_down_pc += frame_pc_clone
         self.cur_frame_pc = frame_pc_clone
 
@@ -264,6 +266,10 @@ class LiDARDataset(Dataset):
 
         # further filtering according to the label (TODO)
         return points, labels
+    
+    def write_merged_pc(self, out_path):
+        o3d.io.write_point_cloud(out_path, self.map_down_pc) 
+        print("save the merged point cloud map to %s\n" % (out_path))    
 
     def __len__(self) -> int:
         if self.config.ray_loss:

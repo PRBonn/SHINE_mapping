@@ -21,7 +21,7 @@ method_name = "ours_xxx"
 ######################################## Newer College Dataset ########################################
 
 # evaluation results output file
-base_output_folder = "xxx/shine_mapping/experiments/evaluation/"
+base_output_folder = "./experiments/evaluation/"
 
 output_csv_path = base_output_folder + dataset_name + method_name + "_eval.csv"
 

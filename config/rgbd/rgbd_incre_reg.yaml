@@ -1,35 +1,35 @@
 setting:
-  name: "maicity_batch"
+  name: "rgbd_incre_reg"
   output_root: "./experiments/"
-  pc_path: "xxx/data/mai_city/ply/sequences/01/velodyne"
-  pose_path: "xxx/data/mai_city/ply/sequences/01/poses.txt"
-  calib_path: "xxx/data/mai_city/ply/sequences/01/calib.txt"
+  pc_path: "xxx/data/neural_rgbd_data/green_room_kitti_format/rgbd_ply"
+  pose_path: "xxx/data/neural_rgbd_data/green_room_kitti_format/poses.txt"
+  calib_path: ""
   load_model: False
   model_path: "" 
   first_frame_ref: False
   begin_frame: 0
-  end_frame: 100
-  every_frame: 1 # 1 means does not skip
+  end_frame: 1500
+  every_frame: 5 # 1 means does not skip
   device: "cuda"
   gpu_id: "0"
 process:
-  min_range_m: 1.5
-  pc_radius_m: 25.0  # distance filter for each frame
+  min_range_m: 0.2
+  pc_radius_m: 5.0  # distance filter for each frame
   rand_downsample: False # use random or voxel downsampling
-  vox_down_m: 0.05
+  vox_down_m: 0.01
   rand_down_r: 0.2
   filter_noise: False
   estimate_normal: False
 sampler:
-  surface_sample_range_m: 0.2
+  surface_sample_range_m: 0.05
   surface_sample_n: 3
-  free_sample_begin_ratio: 0.3
+  free_sample_begin_ratio: 0.5
   free_sample_end_ratio: 1.1
   free_sample_n: 3
 octree:
-  leaf_vox_size: 0.2
+  leaf_vox_size: 0.02
   tree_level_world: 12
-  tree_level_feat: 3
+  tree_level_feat: 4
   feature_dim: 8
   poly_int_on: True
   octree_from_surface_samples: True
@@ -40,16 +40,16 @@ decoder:
 loss:
   ray_loss: False
   main_loss_type: sdf_bce  # select from sdf_bce (our proposed), sdf_l1, sdf_l2, dr, dr_neus
-  sigma_sigmoid_m: 0.05
+  sigma_sigmoid_m: 0.02
   loss_weight_on: False
   behind_dropoff_on: False
   ekional_loss_on: False
   weight_e: 0.1
 continual:
-  continual_learning_reg: False
-  lambda_forget: 0
+  continual_learning_reg: True
+  lambda_forget: 1e3
 optimizer:
-  iters: 20000
+  iters: 50
   batch_size: 4096
   learning_rate: 0.01
   weight_decay: 1e-7 # l2 regularization
@@ -57,8 +57,8 @@ eval:
   wandb_vis_on: False # log to wandb or not
   eval_on: False
   eval_freq_iters: 10000
-  vis_freq_iters: 5000 # reconstruct the mesh every x iterations
+  vis_freq_iters: 0 # reconstruct the mesh every x iterations
   save_freq_iters: 10000 # save the model and octree every x iterations
-  mesh_freq_frame: 1 
-  mc_res_m: 0.1 # reconstruction marching cubes resolution
-  mc_vis_level: 1 # mask the voxels used for marching cubes reconstruction according to the octree level
+  mesh_freq_frame: 5 # reconstruct the mesh every x frames
+  mc_res_m: 0.02 # reconstruction marching cubes resolution
+  mc_vis_level: 2 

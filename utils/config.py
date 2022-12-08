@@ -64,6 +64,9 @@ class SHINEConfig:
             20  # supporting neighbor count for estimating the normal
         )
 
+        # frame-wise downsampling ratio for the merged map point cloud (unit: m)
+        self.map_vox_down_m: float = 0.1 
+
         # octree
         self.tree_level_world: int = (
             10  # the total octree level, allocated for the whole space
@@ -188,6 +191,7 @@ class SHINEConfig:
         self.gpu_id = config_args["setting"]["gpu_id"]
 
         # process
+        self.min_range = config_args["process"]["min_range_m"]
         self.pc_radius = config_args["process"]["pc_radius_m"]
         self.rand_downsample = config_args["process"]["rand_downsample"]
         self.vox_down_m = config_args["process"]["vox_down_m"]

@@ -34,7 +34,7 @@ conda activate shine
 ```
 ### 3. Install the key requirement kaolin
 
-Follow the [instructions](https://kaolin.readthedocs.io/en/latest/notes/installation.html) to install [kaolin](https://kaolin.readthedocs.io/en/latest/index.html). First, clone kaolin to local directory:
+Follow the [instructions](https://kaolin.readthedocs.io/en/latest/notes/installation.html) to install [kaolin](https://kaolin.readthedocs.io/en/latest/index.html). Firstly, clone kaolin to local directory:
 
 ```
 git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
@@ -58,22 +58,20 @@ Use ```python -c "import kaolin; print(kaolin.__version__)"``` to check if kaoli
 
 ### 4. Install the other requirements
 ```
-pip install open3d wandb
+pip install open3d wandb tqdm
 conda install scikit-image
 ```
 
 ## Prepare data
 
 Generally speaking, we only need to provide:
-1. the folder containing the point cloud (`.bin`, `.ply` or `.pcd` format) for each frame.
-2. the pose file (`.txt`) containing the transformation matrix of each frame. 
-3. the calib file (`.txt`) containing the static transformation between sensor and body frames.
+1. `pc_path` : the folder containing the point cloud (`.bin`, `.ply` or `.pcd` format) for each frame.
+2. `pose_path` : the pose file (`.txt`) containing the transformation matrix of each frame. 
+3. `calib_path` : the calib file (`.txt`) containing the static transformation between sensor and body frames (optional, would be identity matrix if set as `''`).
 
 They all follow the [KITTI odometry data format](https://www.cvlibs.net/datasets/kitti/eval_odometry.php).
 
-After preparing the data, you need to correctly set the data path (`pc_path`, `pose_path` and `calib_path`) in the config files under `config` folder. You also need to set a path `output_root` to store the experiment results and logs.
-
-Our method is currently a mapping-with-known-pose system. If you do not have the ground truth pose file, you may use a LiDAR odometry system such as [KISS-ICP](https://github.com/PRBonn/kiss-icp) to easily estimate the pose. Under such case, you do not need a calib file, so just set `calib_path: ""` in the config file.
+After preparing the data, you need to correctly set the data path (`pc_path`, `pose_path` and `calib_path`) in the config files under `config` folder. You may also set a path `output_root` to store the experiment results and logs.
 
 Here, we provide the link to several public available datasets for testing SHINE Mapping:
 
@@ -89,7 +87,7 @@ sh ./scripts/download_maicity.sh
 
 Download the full dataset from [here](https://www.cvlibs.net/datasets/kitti/eval_odometry.php).
 
-If you want to use an exmaple part of the dataset (seq 00) for the test, you can use the following script to download (117 MB):
+If you want to use an example part of the dataset (seq 00) for the test, you can use the following script to download (117 MB):
 ```
 sh ./scripts/download_kitti_example.sh
 ```
@@ -98,10 +96,40 @@ sh ./scripts/download_kitti_example.sh
 
 Download the full dataset from [here](https://ori-drs.github.io/newer-college-dataset/download/).
 
-If you want to use an exmaple part of the dataset (Quad) for the test, you can use the following script to download (634 MB):
+If you want to use an example part of the dataset (Quad) for the test, you can use the following script to download (634 MB):
 ```
 sh ./scripts/download_ncd_example.sh
 ```
+
+### RGB-D datasets
+
+SHINE Mapping also supports the mapping on RGB-D datasets. You may firstly try the synthetic dataset from [NeuralRGB-D](https://github.com/dazinovic/neural-rgbd-surface-reconstruction). You can download the full dataset from [here](http://kaldir.vc.in.tum.de/neural_rgbd/neural_rgbd_data.zip) or use the following script to download (7.25 GB).
+```
+sh ./scripts/download_neural_rgbd_data.sh
+```
+
+After downloading the data, you need to firstly convert the dataset to the KITTI format by using for each sequence:
+```
+sh ./scripts/convert_rgbd_to_kitti_format.sh
+```
+
+### Mapping without ground truth pose
+<details>
+  <summary>[Details (click to expand)]</summary>
+
+Our method is currently a mapping-with-known-pose system. If you do not have the ground truth pose file, you may use a LiDAR odometry system such as [KISS-ICP](https://github.com/PRBonn/kiss-icp) to easily estimate the pose.  
+
+You can simply install KISS-ICP by:
+
+```
+pip install kiss-icp
+```
+And then run KISS-ICP with your data path `pc_path`
+```
+kiss_icp_pipeline <pc_path>
+```
+The estimated pose file can be find in `./results/latest/velodyne.txt`. You can directly use it as your `pose_path`. In this case, you do not need a calib file, so just set `calib_path: ""` in the config file.
+</details>
 
 ## Run
 
@@ -159,7 +187,5 @@ Additional, we thanks greatly for the authors of the following opensource projec
 - [VDBFusion](https://github.com/PRBonn/vdbfusion) (comparison baseline)
 - [Voxblox](https://github.com/ethz-asl/voxblox) (comparison baseline)
 - [Puma](https://github.com/PRBonn/puma) (comparison baseline and the MaiCity dataset)
-
-
-
+- [KISS-ICP](https://github.com/PRBonn/kiss-icp) (simple yet effective pose estimation)
 
