@@ -141,15 +141,33 @@ For batch processing based mapping, use:
 python shine_batch.py ./config/maicity/maicity_batch.yaml
 ```
 
+<details>
+  <summary>[Expected results (click to expand)]</summary>
+
+
+</details>
+
+
 For incremental mapping with regularization, use:
 ```
 python shine_incre.py ./config/maicity/maicity_incre_reg.yaml
 ```
 
+<details>
+  <summary>[Expected results (click to expand)]</summary>
+
+
+</details>
+
 For incremental mapping with replay, use:
 ```
 python shine_incre.py ./config/maicity/maicity_incre_replay.yaml
 ```
+<details>
+  <summary>[Expected results (click to expand)]</summary>
+
+
+</details>
 
 The results will be stored with your experiment name with the starting timestamp in the `output_root` directory as what you set in the config file. You can find the reconstructed mesh (`*.ply` format) and optimized model in `mesh` and `model` folder, respectively.
 
