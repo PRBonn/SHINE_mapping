@@ -135,6 +135,8 @@ The estimated pose file can be find in `./results/latest/velodyne.txt`. You can 
 
 We take the MaiCity dataset as an example to show how SHINE Mapping works. You can simply replace maicity with your dataset name in the config file path, such as `./config/[dataset]/[dataset]_[xxx].yaml`.
 
+The results will be stored with your experiment name with the starting timestamp in the `output_root` directory as what you set in the config file. You can find the reconstructed mesh (`*.ply` format) and optimized model in `mesh` and `model` folder, respectively.
+
 
 For batch processing based mapping, use:
 ```
@@ -144,7 +146,9 @@ python shine_batch.py ./config/maicity/maicity_batch.yaml
 <details>
   <summary>[Expected results (click to expand)]</summary>
 
-https://user-images.githubusercontent.com/34207278/206579093-8ba92baa-2b98-462a-b92d-ce3eff8ede64.mp4
+![](https://user-images.githubusercontent.com/34207278/206579093-8ba92baa-2b98-462a-b92d-ce3eff8ede64.mp4 | width=500)
+
+
 
 </details>
 
@@ -156,9 +160,12 @@ python shine_incre.py ./config/maicity/maicity_incre_reg.yaml
 
 <details>
   <summary>[Expected results (click to expand)]</summary>
+
 For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree.
-  
-https://user-images.githubusercontent.com/34207278/206582367-f2f4a66a-83f8-4a90-a2db-e104b5985bdd.mp4
+
+![](https://user-images.githubusercontent.com/34207278/206582367-f2f4a66a-83f8-4a90-a2db-e104b5985bdd.mp4 | width=500)
+
+
 
 </details>
 
@@ -168,13 +175,13 @@ python shine_incre.py ./config/maicity/maicity_incre_replay.yaml
 ```
 <details>
   <summary>[Expected results (click to expand)]</summary>
+
 For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree.
-  
-https://user-images.githubusercontent.com/34207278/206581857-0b38bf26-ef00-4983-a903-4a58ae7ff001.mp4
+
+![](https://user-images.githubusercontent.com/34207278/206581857-0b38bf26-ef00-4983-a903-4a58ae7ff001.mp4 | width=500)
+
 
 </details>
-
-The results will be stored with your experiment name with the starting timestamp in the `output_root` directory as what you set in the config file. You can find the reconstructed mesh (`*.ply` format) and optimized model in `mesh` and `model` folder, respectively.
 
 The logs can be monitored via [Weights & Bias](https://wandb.ai/site) online if you turn the `wandb_vis_on` option on. If it's your first time to use Weights & Bias, you would be requested to register and login to your wandb account. 
 

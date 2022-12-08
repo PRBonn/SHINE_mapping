@@ -36,7 +36,7 @@ octree:
 decoder:
   mlp_level: 2
   mlp_hidden_dim: 32
-  freeze_after_frame: 0
+  freeze_after_frame: 20
 loss:
   ray_loss: False
   main_loss_type: sdf_bce  # select from sdf_bce (our proposed), sdf_l1, sdf_l2, dr, dr_neus
