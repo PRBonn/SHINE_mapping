@@ -1,22 +1,38 @@
-import open3d as o3d
-import numpy as np
 import csv
-
 from eval_utils import eval_mesh
 
 ########################################### MaiCity Dataset ###########################################
-dataset_name = "maicity_01_dense_"
+dataset_name = "maicity_01_"
 
-# ground truth point cloud (or mesh) file, masked by the co-overlapping part
-gt_pcd_path = "xxx/maicity/01/gt_map_pc_mai_1cm_dense_part.ply"
+# ground truth point cloud (or mesh) file
+# (optional masked by the intersection part of all the compared method)
+gt_pcd_path = "xxx/maicity/01/gt_map_pc_mai.ply"
 
 pred_mesh_path = "xxx/ours_xxx.ply"
 method_name = "ours_xxx"
+
+# pred_mesh_path = "xxx/baseline/vdb_fusion_xxx.ply"
+# method_name = "vdb_fusion_xxx"
+
+# pred_mesh_path = "xxx/baseline/puma_xxx.ply"
+# method_name = "puma_xxx"
 
 ########################################### MaiCity Dataset ###########################################
 
 
 ######################################## Newer College Dataset ########################################
+# dataset_name = "ncd_quad_"
+
+# gt_pcd_path = "xxx/ncd_example/quad/ncd_quad_gt_pc.ply"
+
+# pred_mesh_path = "xxx/ours_xxx.ply"
+# method_name = "ours_xxx"
+
+# pred_mesh_path = "xxx/baseline/vdb_fusion_xxx.ply"
+# method_name = "vdb_fusion_xxx"
+
+# pred_mesh_path = "xxx/baseline/puma_xxx.ply"
+# method_name = "puma_xxx"
 
 ######################################## Newer College Dataset ########################################
 
@@ -33,7 +49,7 @@ truncation_dist_acc = 0.2
 truncation_dist_com = 2.0
 
 # For NCD
-# down_sample_vox = 0.04
+# down_sample_vox = 0.02
 # dist_thre = 0.2
 # truncation_dist_acc = 0.4
 # truncation_dist_com = 2.0
@@ -46,7 +62,9 @@ print(eval_metric)
 
 evals = [eval_metric]
 
-csv_columns = ['MAE_accuracy (m)', 'MAE_completeness (m)', 'Chamfer_L1 (m)', 'Chamfer_L2 (m)', 'Precision [Accuracy] (%)', 'Recall [Completeness] (%)', 'F-score (%)', 'Spacing (m)', 'Inlier_threshold (m)', 'Outlier_truncation_acc (m)', 'Outlier_truncation_com (m)']
+csv_columns = ['MAE_accuracy (m)', 'MAE_completeness (m)', 'Chamfer_L1 (m)', 'Chamfer_L2 (m)', \
+        'Precision [Accuracy] (%)', 'Recall [Completeness] (%)', 'F-score (%)', 'Spacing (m)', \
+        'Inlier_threshold (m)', 'Outlier_truncation_acc (m)', 'Outlier_truncation_com (m)']
 
 try:
     with open(output_csv_path, 'w') as csvfile:

@@ -45,8 +45,9 @@ def eval_mesh(file_pred, file_trgt, down_sample_res=0.02, threshold=0.05, trunca
 
     pcd_trgt = o3d.io.read_point_cloud(file_trgt)
 
-    if gt_bbx_mask_on: # filter the prediction outside the gt bounding box (since gt sometimes is not complete enough)
-        trgt_bbx = pcd_trgt.get_axis_aligned_bounding_box() # TODO
+    # (optional) filter the prediction outside the gt bounding box (since gt sometimes is not complete enough)
+    if gt_bbx_mask_on: 
+        trgt_bbx = pcd_trgt.get_axis_aligned_bounding_box()
         min_bound = trgt_bbx.get_min_bound()
         min_bound[2]-=down_sample_res
         max_bound = trgt_bbx.get_max_bound()
@@ -56,6 +57,7 @@ def eval_mesh(file_pred, file_trgt, down_sample_res=0.02, threshold=0.05, trunca
         # pcd_sample_pred = pcd_sample_pred.crop(trgt_bbx)
 
     # pcd_sample_pred = mesh_pred.sample_points_poisson_disk(number_of_points=mesh_sample_point, init_factor=possion_sample_init_factor)
+    # mesh uniform sampling
     pcd_sample_pred = mesh_pred.sample_points_uniformly(number_of_points=mesh_sample_point)
 
     if down_sample_res > 0:
@@ -174,3 +176,43 @@ def eval_depth(depth_pred, depth_trgt):
     metrics['complete'] = np.mean(mask1.astype('float'))
 
     return metrics
+
+def crop_intersection(file_gt, files_pred, out_file_crop, dist_thre=0.1, mesh_sample_point=1000000):
+    """ Get the cropped ground truth point cloud according to the intersection of the predicted
+    mesh by different methods
+    Args:
+        file_gt: file path of the ground truth (shoud be point cloud)
+        files_pred: a list of the paths of different methods's reconstruction (shoud be mesh)
+        out_file_crop: output path of the cropped ground truth point cloud
+        dist_thre: nearest neighbor distance threshold in meter
+        mesh_sample_point: number of the sampling points from the mesh
+    """
+    print("Load the original ground truth point cloud from:", file_gt)
+    pcd_gt = o3d.io.read_point_cloud(file_gt)
+    pcd_gt_pts = np.asarray(pcd_gt.points)
+    dist_square_thre = dist_thre**2
+    for i in range(len(files_pred)):
+        cur_file_pred = files_pred[i]
+        print("Process", cur_file_pred)
+        cur_mesh_pred = o3d.io.read_triangle_mesh(cur_file_pred)
+
+        cur_sample_pred = cur_mesh_pred.sample_points_uniformly(number_of_points=mesh_sample_point)
+        
+        cur_kdtree = o3d.geometry.KDTreeFlann(cur_sample_pred)
+        
+        crop_pcd_gt_pts = []
+        for pt in pcd_gt_pts:
+            _, _, dist_square = cur_kdtree.search_knn_vector_3d(pt, 1)
+            
+            if dist_square[0] < dist_square_thre:
+                crop_pcd_gt_pts.append(pt)
+        
+        pcd_gt_pts = np.asarray(crop_pcd_gt_pts)
+
+    crop_pcd_gt = o3d.geometry.PointCloud()
+    crop_pcd_gt.points = o3d.utility.Vector3dVector(pcd_gt_pts)
+    
+    print("Output the croped ground truth to:", out_file_crop)
+    o3d.io.write_point_cloud(out_file_crop, crop_pcd_gt)
+
+    
