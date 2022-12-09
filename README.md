@@ -1,25 +1,67 @@
-# ✨ SHINE-Mapping: Large-Scale 3D Mapping Using Sparse Hierarchical Implicit Neural Representations
+<p align="center">
 
-This repository contains the implementation of the paper:
+  <h1 align="center">✨ SHINE-Mapping: Large-Scale 3D Mapping Using Sparse Hierarchical Implicit Neural Representations</h1>
+  <p align="center">
+    <a href="https://www.ipb.uni-bonn.de/people/xingguang-zhong/"><strong>Xingguang Zhong*</strong></a>
+    ·
+    <a href="https://www.ipb.uni-bonn.de/people/yue-pan/"><strong>Yue Pan*</strong></a>
+    ·
+    <a href="https://www.ipb.uni-bonn.de/people/jens-behley/"><strong>Jens Behley</strong></a>
+    ·
+    <a href="https://www.ipb.uni-bonn.de/people/cyrill-stachniss/"><strong>Cyrill Stachniss</strong></a>
+  </p>
+  <p align="center">(* Equal Contribution)</p>
+  <h3 align="center"><a href="https://arxiv.org/abs/2210.02299">Arxiv Preprint</a> | <a href="">Video</a></h3>
+  <div align="center"></div>
+</p>
 
-SHINE-Mapping: Large-Scale 3D Mapping Using **S**parse **H**ierarchical **I**mplicit **NE**ural Representations.
 
-By [Xingguang Zhong](https://www.ipb.uni-bonn.de/people/xingguang-zhong/), [Yue Pan](https://www.ipb.uni-bonn.de/people/yue-pan/), [Jens Behley](https://www.ipb.uni-bonn.de/people/jens-behley/) and [Cyrill Stachniss](https://www.ipb.uni-bonn.de/people/cyrill-stachniss/)
-
-[Arxiv Preprint](https://arxiv.org/abs/2210.02299) | [Demo Video]()
-
-![teaser_fig](https://user-images.githubusercontent.com/34207278/194295874-ccf02ed0-ad10-4451-acd2-e70001737ecf.png)
-
-## Demo Video
+---
 
 Incremental Mapping | Reconstruction Results |
 :-: | :-: |
 <video src='https://user-images.githubusercontent.com/34207278/192112474-f88d0d90-96a4-4ff3-b3bb-4e119b810d9e.mp4'> | <video src='https://user-images.githubusercontent.com/34207278/192112449-56cb5c73-500f-416a-8892-e44d0e962669.mp4'> |
 
-  
+
+<!-- TABLE OF CONTENTS -->
+<details open="open" style='padding: 10px; border-radius:5px 30px 30px 5px; border-style: solid; border-width: 1px;'>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#Abstract">Abstract</a>
+    </li>
+    <li>
+      <a href="#Installation">Installation</a>
+    </li>
+    <li>
+      <a href="#Prepare data">Prepare data</a>
+    </li>
+    <li>
+      <a href="#Run">How to run</a>
+    </li>
+    <li>
+      <a href="#Evaluation">Evaluation</a>
+    </li>
+    <li>
+      <a href="#Tips">Tips</a>
+    </li>
+    <li>
+      <a href="#citation">Citation</a>
+    </li>
+    <li>
+      <a href="#contact">Contact</a>
+    </li>
+    <li>
+      <a href="#acknowledgement">Acknowledgement</a>
+    </li>
+  </ol>
+</details>
+
+----
 ## Abstract
 Accurate mapping of large-scale environments is an essential building block of most outdoor autonomous systems. Challenges of traditional mapping methods include the balance between memory consumption and mapping accuracy. This paper addresses the problems of achieving large-scale 3D reconstructions with implicit representations using 3D LiDAR measurements. We learn and store implicit features through an octree-based hierarchical structure, which is sparse and extensible. The features can be turned into signed distance values through a shallow neural network. We leverage binary cross entropy loss to optimize the local features with the 3D measurements as supervision. Based on our implicit representation, we design an incremental mapping system with regularization to tackle the issue of catastrophic forgetting in continual learning. Our experiments show that our 3D reconstructions are more accurate, complete, and memory-efficient than current state-of-the-art 3D mapping methods.
 
+----
 ## Installation
 
 ### 1. Clone SHINE Mapping repository
@@ -62,9 +104,11 @@ pip install open3d wandb tqdm
 conda install scikit-image
 ```
 
+----
+
 ## Prepare data
 
-Generally speaking, we only need to provide:
+Generally speaking, you only need to provide:
 1. `pc_path` : the folder containing the point cloud (`.bin`, `.ply` or `.pcd` format) for each frame.
 2. `pose_path` : the pose file (`.txt`) containing the transformation matrix of each frame. 
 3. `calib_path` : the calib file (`.txt`) containing the static transformation between sensor and body frames (optional, would be identity matrix if set as `''`).
@@ -131,6 +175,8 @@ kiss_icp_pipeline <pc_path>
 The estimated pose file can be find in `./results/latest/velodyne.txt`. You can directly use it as your `pose_path`. In this case, you do not need a calib file, so just set `calib_path: ""` in the config file.
 </details>
 
+----
+
 ## Run
 
 We take the MaiCity dataset as an example to show how SHINE Mapping works. You can simply replace maicity with your dataset name in the config file path, such as `./config/[dataset]/[dataset]_[xxx].yaml`.
@@ -185,13 +231,13 @@ For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree
 </details>
 
 <details>
-  <summary>[Expected results for other datasets (click to expand)]</summary>
+  <summary>[Expected results on other datasets (click to expand)]</summary>
 
-### KITTI
+**KITTI**
 
-### Newer College
+**Newer College**
 
-### RGB-D
+**RGB-D**
 
 
 </details>
@@ -212,6 +258,11 @@ to get the reconstruction metrics such as Chamfer distance, completeness, F-scor
 
 As mentioned in the paper, we also compute a fairer accuracy metric using the ground truth point cloud masked by the intersection of the reconstructed meshes of all the compared methods. To generate such masked ground truth point clouds, you can configure the data path in `./eval/crop_intersection.py` and then run it.
 
+----
+
+## Tips
+
+TBA
 
 ----
 

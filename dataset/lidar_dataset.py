@@ -7,8 +7,6 @@ import copy
 import torch
 from torch.utils.data import Dataset
 import open3d as o3d
-from kiss_icp.datasets import dataset_factory
-from kiss_icp.pipeline import OdometryPipeline
 
 from utils.config import SHINEConfig
 from utils.pose import read_calib_file, read_poses_file
