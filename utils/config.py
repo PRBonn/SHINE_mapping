@@ -196,8 +196,8 @@ class SHINEConfig:
         self.rand_downsample = config_args["process"]["rand_downsample"]
         self.vox_down_m = config_args["process"]["vox_down_m"]
         self.rand_down_r = config_args["process"]["rand_down_r"]
-        self.estimate_normal = config_args["process"]["estimate_normal"]
-        self.filter_noise = config_args["process"]["filter_noise"]
+        # self.estimate_normal = config_args["process"]["estimate_normal"]
+        # self.filter_noise = config_args["process"]["filter_noise"]
 
         # sampler
         self.surface_sample_range_m = config_args["sampler"]["surface_sample_range_m"]
@@ -239,6 +239,7 @@ class SHINEConfig:
         self.mlp_hidden_dim = config_args["decoder"][
             "mlp_hidden_dim"
         ]  # dimension of the mlp's hidden layer
+        # freeze the decoder after runing for x frames (used for incremental mapping to avoid forgeting)
         self.freeze_after_frame = config_args["decoder"]["freeze_after_frame"]
 
         # loss
@@ -302,12 +303,12 @@ class SHINEConfig:
         self.wandb_vis_on = config_args["eval"][
             "wandb_vis_on"
         ]  # use weight and bias to monitor the experiment or not
-        self.eval_on = config_args["eval"][
-            "eval_on"
-        ]  # evaluate the model on the ground truth point cloud or not
-        self.eval_freq_iters = config_args["eval"][
-            "eval_freq_iters"
-        ]  # frequency for evaluation on ground truth point cloud for batch mode (per x iters)
+        # self.eval_on = config_args["eval"][
+        #     "eval_on"
+        # ]  # evaluate the model on the ground truth point cloud or not
+        # self.eval_freq_iters = config_args["eval"][
+        #     "eval_freq_iters"
+        # ]  # frequency for evaluation on ground truth point cloud for batch mode (per x iters)
         self.vis_freq_iters = config_args["eval"][
             "vis_freq_iters"
         ]  # frequency for mesh reconstruction for batch mode (per x iters)

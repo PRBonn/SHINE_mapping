@@ -33,7 +33,7 @@ Incremental Mapping | Reconstruction Results |
       <a href="#installation">Installation</a>
     </li>
     <li>
-      <a href="#prepare data">Prepare data</a>
+      <a href="#prepare-data">Prepare data</a>
     </li>
     <li>
       <a href="#run">How to run</a>
@@ -242,7 +242,7 @@ For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/34207278/206719372-477f1a90-e2b1-44ac-a56e-22e8e5810147.png" width="70%" />
-</p>!
+</p>
 
 **RGB-D**
 

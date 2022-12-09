@@ -18,8 +18,6 @@ process:
   rand_downsample: False # use random or voxel downsampling
   vox_down_m: 0.01
   rand_down_r: 0.2
-  filter_noise: False
-  estimate_normal: False
 sampler:
   surface_sample_range_m: 0.05
   surface_sample_n: 3
@@ -55,8 +53,6 @@ optimizer:
   weight_decay: 1e-7 # l2 regularization
 eval:
   wandb_vis_on: False # log to wandb or not
-  eval_on: False
-  eval_freq_iters: 10000
   vis_freq_iters: 0 # reconstruct the mesh every x iterations
   save_freq_iters: 10000 # save the model and octree every x iterations
   mesh_freq_frame: 5 # reconstruct the mesh every x frames
