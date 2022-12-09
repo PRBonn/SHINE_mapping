@@ -10,13 +10,12 @@
     ·
     <a href="https://www.ipb.uni-bonn.de/people/cyrill-stachniss/"><strong>Cyrill Stachniss</strong></a>
   </p>
+  <p align="center"><a href="https://www.ipb.uni-bonn.de"><strong>University of Bonn</strong></a>
   <p align="center">(* Equal Contribution)</p>
   <h3 align="center"><a href="https://arxiv.org/abs/2210.02299">Arxiv Preprint</a> | <a href="">Video</a></h3>
   <div align="center"></div>
 </p>
 
-
----
 
 Incremental Mapping | Reconstruction Results |
 :-: | :-: |
@@ -46,13 +45,13 @@ Incremental Mapping | Reconstruction Results |
       <a href="#Tips">Tips</a>
     </li>
     <li>
-      <a href="#citation">Citation</a>
+      <a href="#Citation">Citation</a>
     </li>
     <li>
       <a href="#contact">Contact</a>
     </li>
     <li>
-      <a href="#acknowledgement">Acknowledgement</a>
+      <a href="#Acknowledgment">Acknowledgment</a>
     </li>
   </ol>
 </details>
@@ -258,11 +257,11 @@ to get the reconstruction metrics such as Chamfer distance, completeness, F-scor
 
 As mentioned in the paper, we also compute a fairer accuracy metric using the ground truth point cloud masked by the intersection of the reconstructed meshes of all the compared methods. To generate such masked ground truth point clouds, you can configure the data path in `./eval/crop_intersection.py` and then run it.
 
-----
-
 ## Tips
 
-TBA
+1. You can play with different loss functions for SHINE Mapping. With the `ray_loss: False` option, the loss would be calculated from the sdf at each sample point. In this case, you can then select from `sdf_bce` (the proposed method), `sdf_l1` and  `sdf_l2` loss as the `main_loss_type`. With the `ray_loss: True` option, the loss would be calculated from each ray conatining multiple point samples as a depth rendering procedure. In this case,  you can select from `dr` and `dr_neus` as the `main_loss_type`. Additionally, you can set `ekional_loss_on` option to turn on/off the Ekional loss and use `weight_e` as its weight.
+
+2. The feature octree is built mainly according to `leaf_vox_size`, `tree_level_world` and `tree_level_feat`. `leaf_vox_size` represents the size of the leaf voxel size in meter. `tree_level_world` and `tree_level_feat` represent the total tree level and the tree levels with latent feature codes, respectively. `tree_level_world` should be large enough to gurantee all the map data lies inside the cube with the size `leaf_vox_size**(tree_level_world+1)`.
 
 ----
 
