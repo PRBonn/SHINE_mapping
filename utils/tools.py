@@ -26,16 +26,17 @@ def setup_experiment(config: SHINEConfig):
     run_name = config.name + "_" + ts  # modified to a name that is easier to index
         
     run_path = os.path.join(config.output_root, run_name)
-    os.makedirs(run_path, exist_ok=True)
+    access = 0o755
+    os.makedirs(run_path, access, exist_ok=True)
     assert os.access(run_path, os.W_OK)
     print(f"Start {run_path}")
 
     mesh_path = os.path.join(run_path, "mesh")
     map_path = os.path.join(run_path, "map")
     model_path = os.path.join(run_path, "model")
-    os.makedirs(mesh_path, os.W_OK)
-    os.makedirs(map_path, os.W_OK)
-    os.makedirs(model_path, os.W_OK)
+    os.makedirs(mesh_path, access, exist_ok=True)
+    os.makedirs(map_path, access, exist_ok=True)
+    os.makedirs(model_path, access, exist_ok=True)
     
     if config.wandb_vis_on:
         # set up wandb

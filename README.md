@@ -138,7 +138,7 @@ We take the MaiCity dataset as an example to show how SHINE Mapping works. You c
 The results will be stored with your experiment name with the starting timestamp in the `output_root` directory as what you set in the config file. You can find the reconstructed mesh (`*.ply` format) and optimized model in `mesh` and `model` folder, respectively.
 
 
-For batch processing based mapping, use:
+For mapping based on offline batch processing, use:
 ```
 python shine_batch.py ./config/maicity/maicity_batch.yaml
 ```
@@ -153,7 +153,7 @@ python shine_batch.py ./config/maicity/maicity_batch.yaml
 </details>
 
 
-For incremental mapping with regularization, use:
+For incremental mapping with regularization strategy, use:
 ```
 python shine_incre.py ./config/maicity/maicity_incre_reg.yaml
 ```
@@ -169,7 +169,7 @@ For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree
 
 </details>
 
-For incremental mapping with replay, use:
+For incremental mapping with replay strategy, use:
 ```
 python shine_incre.py ./config/maicity/maicity_incre_replay.yaml
 ```
@@ -184,11 +184,34 @@ For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree
 
 </details>
 
+<details>
+  <summary>[Expected results for other datasets (click to expand)]</summary>
+
+### KITTI
+
+### Newer College
+
+### RGB-D
+
+
+</details>
+
 The logs can be monitored via [Weights & Bias](https://wandb.ai/site) online if you turn the `wandb_vis_on` option on. If it's your first time to use Weights & Bias, you would be requested to register and login to your wandb account. 
 
 ## Evaluation
 
-TBD
+To evaluate the reconstruction quality, you need to provide the (reference) ground truth point cloud and your reconstructed mesh. The ground truth point cloud can be found (or sampled from) the downloaded folder of MaiCity, Newer College and Neural RGBD datasets. 
+
+Please change the data path and evaluation set-up in `./eval/evaluator.py` and then run:
+
+```
+python ./eval/evaluator.py
+```
+
+to get the reconstruction metrics such as Chamfer distance, completeness, F-score, etc.
+
+As mentioned in the paper, we also compute a fairer accuracy metric using the ground truth point cloud masked by the intersection of the reconstructed meshes of all the compared methods. To generate such masked ground truth point clouds, you can configure the data path in `./eval/crop_intersection.py` and then run it.
+
 
 ----
 
