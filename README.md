@@ -27,31 +27,31 @@ Incremental Mapping | Reconstruction Results |
   <summary>Table of Contents</summary>
   <ol>
     <li>
-      <a href="#Abstract">Abstract</a>
+      <a href="#abstract">Abstract</a>
     </li>
     <li>
-      <a href="#Installation">Installation</a>
+      <a href="#installation">Installation</a>
     </li>
     <li>
-      <a href="#Prepare data">Prepare data</a>
+      <a href="#prepare data">Prepare data</a>
     </li>
     <li>
-      <a href="#Run">How to run</a>
+      <a href="#run">How to run</a>
     </li>
     <li>
-      <a href="#Evaluation">Evaluation</a>
+      <a href="#evaluation">Evaluation</a>
     </li>
     <li>
-      <a href="#Tips">Tips</a>
+      <a href="#tips">Tips</a>
     </li>
     <li>
-      <a href="#Citation">Citation</a>
+      <a href="#citation">Citation</a>
     </li>
     <li>
       <a href="#contact">Contact</a>
     </li>
     <li>
-      <a href="#Acknowledgment">Acknowledgment</a>
+      <a href="#acknowledgment">Acknowledgment</a>
     </li>
   </ol>
 </details>
@@ -192,7 +192,7 @@ python shine_batch.py ./config/maicity/maicity_batch.yaml
   <summary>[Expected results (click to expand)]</summary>
 
 <p align="center">
-  <video src="https://user-images.githubusercontent.com/34207278/206579093-8ba92baa-2b98-462a-b92d-ce3eff8ede64.mp4" width="10%" />
+  <video src="https://user-images.githubusercontent.com/34207278/206579093-8ba92baa-2b98-462a-b92d-ce3eff8ede64.mp4" width="50%" />
 </p>
 
 </details>
@@ -209,7 +209,7 @@ python shine_incre.py ./config/maicity/maicity_incre_reg.yaml
 For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree.
 
 <p align="center">
-  <video src="https://user-images.githubusercontent.com/34207278/206582367-f2f4a66a-83f8-4a90-a2db-e104b5985bdd.mp4" width="10%" />
+  <video src="https://user-images.githubusercontent.com/34207278/206582367-f2f4a66a-83f8-4a90-a2db-e104b5985bdd.mp4" width="50%" />
 </p>
 
 </details>
@@ -224,7 +224,7 @@ python shine_incre.py ./config/maicity/maicity_incre_replay.yaml
 For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree.
 
 <p align="center">
-  <video src="https://user-images.githubusercontent.com/34207278/206581857-0b38bf26-ef00-4983-a903-4a58ae7ff001.mp4" width="10%" />
+  <video src="https://user-images.githubusercontent.com/34207278/206581857-0b38bf26-ef00-4983-a903-4a58ae7ff001.mp4" width="50%" />
 </p>
 
 </details>
@@ -234,9 +234,21 @@ For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree
 
 **KITTI**
 
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/34207278/206718854-aefa02ec-72ac-470e-a3d0-d61e7d886692.png" width="70%" />
+</p>
+
 **Newer College**
 
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/34207278/206719372-477f1a90-e2b1-44ac-a56e-22e8e5810147.png" width="70%" />
+</p>!
+
 **RGB-D**
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/34207278/206718688-a8bfb786-6439-435b-a225-c596aef9ab64.png" width="70%" />
+</p>
 
 
 </details>
