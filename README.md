@@ -16,6 +16,9 @@
   <div align="center"></div>
 </p>
 
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/34207278/194295874-ccf02ed0-ad10-4451-acd2-e70001737ecf.png" width="90%" />
+</p>
 
 Incremental Mapping | Reconstruction Results |
 :-: | :-: |
@@ -271,9 +274,16 @@ As mentioned in the paper, we also compute a fairer accuracy metric using the gr
 
 ## Tips
 
+<details>
+  <summary>[Details (click to expand)]</summary>
+
 1. You can play with different loss functions for SHINE Mapping. With the `ray_loss: False` option, the loss would be calculated from the sdf at each sample point. In this case, you can then select from `sdf_bce` (the proposed method), `sdf_l1` and  `sdf_l2` loss as the `main_loss_type`. With the `ray_loss: True` option, the loss would be calculated from each ray conatining multiple point samples as a depth rendering procedure. In this case,  you can select from `dr` and `dr_neus` as the `main_loss_type`. Additionally, you can set `ekional_loss_on` option to turn on/off the Ekional loss and use `weight_e` as its weight.
 
 2. The feature octree is built mainly according to `leaf_vox_size`, `tree_level_world` and `tree_level_feat`. `leaf_vox_size` represents the size of the leaf voxel size in meter. `tree_level_world` and `tree_level_feat` represent the total tree level and the tree levels with latent feature codes, respectively. `tree_level_world` should be large enough to gurantee all the map data lies inside the cube with the size `leaf_vox_size**(tree_level_world+1)`.
+
+3. SHINE Mapping supports both the offline batch mapping and the incremental sequential mapping. For incremental mapping, one can either load a fixed pre-trained decoder from the batching mapping on a similar dataset (set `load_model: True`) or train the decoder for `freeze_after_frame` frames on-the-fly and then freeze it afterwards (set `load_model: False`). 
+
+</details>
 
 ----
 
