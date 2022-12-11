@@ -167,8 +167,6 @@ def run_shine_mapping_batch():
             mesh_path = run_path + '/mesh/mesh_iter_' + str(iter+1) + ".ply"
             mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path)
 
-        # evaluation
-
     
 if __name__ == "__main__":
     run_shine_mapping_batch()

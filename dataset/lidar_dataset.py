@@ -9,9 +9,10 @@ from torch.utils.data import Dataset
 import open3d as o3d
 
 from utils.config import SHINEConfig
+from utils.tools import get_time
 from utils.pose import read_calib_file, read_poses_file
 from utils.data_sampler import dataSampler
-from utils.semantic_kitti_utils import get_sem_rgb
+from utils.semantic_kitti_utils import *
 from model.feature_octree import FeatureOctree
 
 
@@ -99,7 +100,12 @@ class LiDARDataset(Dataset):
 
         # load point cloud (support *pcd, *ply and kitti *bin format)
         frame_filename = os.path.join(self.config.pc_path, self.pc_filenames[frame_id])
-        frame_pc = self.read_point_cloud(frame_filename)
+        
+        if not self.config.semantic_on:
+            frame_pc = self.read_point_cloud(frame_filename)
+        else:
+            label_filename = os.path.join(self.config.label_path, self.pc_filenames[frame_id].replace('bin','label'))
+            frame_pc = self.read_semantic_point_label(frame_filename, label_filename)
 
         # block filter: crop the point clouds into a cube
         bbx_min = np.array([-pc_radius, -pc_radius, min_z])
@@ -129,6 +135,15 @@ class LiDARDataset(Dataset):
                 sor_nn, sor_std, print_progress=False
             )[0]
 
+        # load the label from the color channel of frame_pc
+        if self.config.semantic_on:
+            frame_sem_label = np.asarray(frame_pc.colors)[:,0]*255.0 # from [0-1] tp [0-255]
+            frame_sem_label = np.round(frame_sem_label, 0) # to integer value
+            sem_label_list = list(frame_sem_label)
+            frame_sem_rgb = [sem_kitti_color_map[sem_label] for sem_label in sem_label_list]
+            frame_sem_rgb = np.asarray(frame_sem_rgb)/255.0
+            frame_pc.colors = o3d.utility.Vector3dVector(frame_sem_rgb)
+
         # transform to reference frame 
         frame_pc = frame_pc.transform(self.cur_pose_ref)
         # make a backup for merging into the map point cloud
@@ -148,12 +163,13 @@ class LiDARDataset(Dataset):
             frame_normal_torch = torch.tensor(np.asarray(frame_pc_s.normals), dtype=self.dtype, device=dev)
 
         frame_label_torch = None
-        # load the label from the color channel of frame_pc (TODO)
+        if self.config.semantic_on:
+            frame_label_torch = torch.tensor(frame_sem_label, dtype=self.dtype, device=dev)
 
         # print("Frame point cloud count:", frame_pc_s_torch.shape[0])
 
         # sampling the points
-        (coord, sdf_label, normal_label, _, weight, sample_depth, ray_depth) = \
+        (coord, sdf_label, normal_label, sem_label, weight, sample_depth, ray_depth) = \
             self.sampler.sample(frame_pc_s_torch, frame_origin_torch, \
             frame_normal_torch, frame_label_torch)
 
@@ -162,6 +178,7 @@ class LiDARDataset(Dataset):
             self.coord_pool = coord
             self.sdf_label_pool = sdf_label
             self.normal_label_pool = normal_label
+            self.sem_label_pool = sem_label
             self.weight_pool = weight
             self.sample_depth_pool = sample_depth
             self.ray_depth_pool = ray_depth        
@@ -178,8 +195,11 @@ class LiDARDataset(Dataset):
                 self.normal_label_pool = torch.cat((self.normal_label_pool, normal_label), 0)
             else:
                 self.normal_label_pool = None
-
-        # TODO: add semantic labels
+            
+            if sem_label is not None:
+                self.sem_label_pool = torch.cat((self.sem_label_pool, sem_label), 0)
+            else:
+                self.sem_label_pool = None
 
         # update feature octree
         if self.config.octree_from_surface_samples:
@@ -225,21 +245,22 @@ class LiDARDataset(Dataset):
                 "The format of the imported point labels is wrong (support only *label)"
             )
 
-        points, labels = self.preprocess_kitti(
+        points, labels = self.preprocess_sem_kitti(
             points, labels, self.config.min_z, self.config.min_range
         )
 
-        # TODO
         sem_labels = labels & 0xFFFF
-        ins_labels = labels >> 16
+        # ins_labels = labels >> 16
 
-        sem_rgb = (
-            np.array([get_sem_rgb(sem_label) for sem_label in sem_labels]) / 255.0
-        )  # to [0-1]
+        sem_labels_coarse = [sem_kitti_learning_map[sem_label] for sem_label in sem_labels]
+
+        # sem_rgb = [sem_kitti_color_map[sem_label_coarse] for sem_label_coarse in sem_labels_coarse]
+
+        sem_labels_coarse = (np.asarray(sem_labels_coarse)/255.0).reshape((-1, 1)).repeat(3, axis=1) # label 
 
         pc_out = o3d.geometry.PointCloud()
         pc_out.points = o3d.utility.Vector3dVector(points)
-        pc_out.colors = o3d.utility.Vector3dVector(sem_rgb)
+        pc_out.colors = o3d.utility.Vector3dVector(sem_labels_coarse)
 
         return pc_out
 
@@ -250,19 +271,30 @@ class LiDARDataset(Dataset):
         points = points[np.linalg.norm(points, axis=1) >= min_range]
         return points
 
-    def preprocess_sem_kitti(self, points, labels, z_th=-3.0, min_range=2.5):
+    def preprocess_sem_kitti(self, points, labels, z_th=-3.0, min_range=2.5, filter_moving = True):
         # filter the outliers
-        z = points[:, 2]
-        points = points[z > z_th]
-        labels = labels[z > z_th]
+        
+        # z = points[:, 2]
+        # points = points[z > z_th]
+        # labels = labels[z > z_th]
 
-        points = points[np.linalg.norm(points, axis=1) >= min_range]
-        labels = labels[np.linalg.norm(points, axis=1) >= min_range]
+        # filtered_idx = np.linalg.norm(points, axis=1) >= min_range
+        # points = points[filtered_idx]
+        # labels = labels[filtered_idx]
 
-        # sem_labels = labels & 0xFFFF
-        # ins_labels = labels >> 16
+        # filter the outliers according to semantic labels
+        sem_labels = labels & 0xFFFF
+        
+        filtered_idx = sem_labels > 1
+        points = points[filtered_idx]
+        labels = labels[filtered_idx]
 
-        # further filtering according to the label (TODO)
+        if filter_moving:
+            sem_labels = labels & 0xFFFF
+            filtered_idx = sem_labels < 100 
+            points = points[filtered_idx]
+            labels = labels[filtered_idx]
+
         return points, labels
     
     def write_merged_pc(self, out_path):

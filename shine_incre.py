@@ -41,6 +41,7 @@ def run_shine_mapping_incremental():
     if config.load_model:
         loaded_model = torch.load(config.model_path)
         mlp.load_state_dict(loaded_model["decoder"])
+        print("Pretrained decoder loaded")
         freeze_model(mlp) # fixed the decoder
 
     # dataset

@@ -16,6 +16,8 @@ class SHINEConfig:
         self.pose_path: str = ""  # input pose file
         self.calib_path: str = ""  # input calib file (to sensor frame)
 
+        self.label_path: str = "" # input point-wise label path, for semantic shine mapping
+
         self.load_model: bool = False  # load the pre-trained model or not
         self.model_path: str = "/"  # pre-trained model path
 
@@ -63,6 +65,8 @@ class SHINEConfig:
         self.normal_max_nn: int = (
             20  # supporting neighbor count for estimating the normal
         )
+
+        self.semantic_on: bool = False # semantic shine mapping on
 
         # frame-wise downsampling ratio for the merged map point cloud (unit: m)
         self.map_vox_down_m: float = 0.1 
@@ -177,7 +181,8 @@ class SHINEConfig:
         self.output_root = config_args["setting"]["output_root"]  
         self.pc_path = config_args["setting"]["pc_path"] 
         self.pose_path = config_args["setting"]["pose_path"]
-        self.calib_path = config_args["setting"]["calib_path"] 
+        self.calib_path = config_args["setting"]["calib_path"]
+        # self.label_path =  config_args["setting"]["label_path"] # optional, when semantic shine mapping is on
 
         self.load_model = config_args["setting"]["load_model"]
         self.model_path = config_args["setting"]["model_path"]
@@ -198,6 +203,7 @@ class SHINEConfig:
         self.rand_down_r = config_args["process"]["rand_down_r"]
         # self.estimate_normal = config_args["process"]["estimate_normal"]
         # self.filter_noise = config_args["process"]["filter_noise"]
+        # self.semantic_on = config_args["process"]["semantic_on"] 
 
         # sampler
         self.surface_sample_range_m = config_args["sampler"]["surface_sample_range_m"]

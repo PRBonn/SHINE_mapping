@@ -32,126 +32,6 @@ class LabelDataConverter:
             self.instance_id.append(instance_id)
 
 
-def get_sem_rgb(sem_id):
-    RGB_id = 0
-    RGB_id_array = [0, 0, 0]
-    # not used
-    if sem_id == 0:  # unlabled
-        RGB_id = 0x000000
-        RGB_id_array = [0, 0, 0]
-    elif sem_id == 1:  # outlier
-        RGB_id = 0xFF0000
-        RGB_id_array = [255, 0, 0]
-
-    # instance
-    elif sem_id == 10:  # car
-        RGB_id = 0x6496F5
-        RGB_id_array = [100, 150, 245]
-    elif sem_id == 11:  # bicycle
-        RGB_id = 0x64E6F5
-        RGB_id_array = [100, 230, 245]
-    elif sem_id == 13:  # bus
-        RGB_id = 0x6450FA
-        RGB_id_array = [100, 80, 250]
-    elif sem_id == 15:  # motorcycle
-        RGB_id = 0x1E3C96
-        RGB_id_array = [30, 60, 150]
-    elif sem_id == 16:  # on-rails
-        RGB_id = 0x0000FF
-        RGB_id_array = [0, 0, 255]
-    elif sem_id == 18:  # truck
-        RGB_id = 0x501EB4
-        RGB_id_array = [80, 30, 180]
-    elif sem_id == 20:  # other-vehicle
-        RGB_id = 0x0000FF
-        RGB_id_array = [0, 0, 255]
-    elif sem_id == 30:  # person
-        RGB_id = 0xFF1E1E
-        RGB_id_array = [255, 30, 30]
-    elif sem_id == 31:  # bicyclist
-        RGB_id = 0xFF28C8
-        RGB_id_array = [255, 40, 200]
-    elif sem_id == 32:  # motorcyclist
-        RGB_id = 0x961E5A
-        RGB_id_array = [150, 30, 90]
-
-    # background
-
-    elif sem_id == 40:  # road
-        RGB_id = 0xFF00FF
-        RGB_id_array = [255, 0, 255]
-    elif sem_id == 44:  # parking
-        RGB_id = 0xFF96FF
-        RGB_id_array = [255, 150, 255]
-    elif sem_id == 48:  # sidewalk
-        RGB_id = 0x4B004B
-        RGB_id_array = [75, 0, 75]
-    elif sem_id == 49:  # other-ground
-        RGB_id = 0xAF004B
-        RGB_id_array = [175, 0, 75]
-    elif sem_id == 50:  # building
-        RGB_id = 0xFFC800
-        RGB_id_array = [255, 200, 0]
-    elif sem_id == 51:  # fence
-        RGB_id = 0xFF7832
-        RGB_id_array = [255, 120, 50]
-    elif sem_id == 52:  # other-structure
-        RGB_id = 0xFF9600
-        RGB_id_array = [255, 150, 0]
-    elif sem_id == 60:  # lane-marking
-        RGB_id = 0x96FFAA
-        RGB_id_array = [150, 255, 170]
-    elif sem_id == 70:  # vegetation
-        RGB_id = 0x00AF00
-        RGB_id_array = [0, 175, 0]
-    elif sem_id == 71:  # trunk
-        RGB_id = 0x873C00
-        RGB_id_array = [135, 60, 0]
-    elif sem_id == 72:  # terrain
-        RGB_id = 0x96F050
-        RGB_id_array = [150, 240, 80]
-    elif sem_id == 80:  # pole
-        RGB_id = 0xFFF096
-        RGB_id_array = [255, 240, 150]
-    elif sem_id == 81:  # traffic-sign
-        RGB_id = 0xFF0000
-        RGB_id_array = [255, 0, 0]
-    elif sem_id == 99:  # other-object
-        RGB_id = 0x32FFFF
-        RGB_id_array = [50, 255, 255]
-
-    # dynamic objects
-    elif sem_id == 252:  # moving car
-        RGB_id = 0x6496F5
-        RGB_id_array = [100, 150, 245]
-    elif sem_id == 253:  # moving bicycle
-        RGB_id = 0xFF28C8
-        RGB_id_array = [255, 40, 200]
-    elif sem_id == 254:  # moving person
-        RGB_id = 0xFF1E1E
-        RGB_id_array = [255, 30, 30]
-    elif sem_id == 255:  # moving motorcyle
-        RGB_id = 0x961E5A
-        RGB_id_array = [150, 30, 90]
-    elif sem_id == 256:  # moving on-rails(tram)
-        RGB_id = 0x0000FF
-        RGB_id_array = [0, 0, 255]
-    elif sem_id == 257:  # moving bus
-        RGB_id = 0x6450FA
-        RGB_id_array = [100, 80, 250]
-    elif sem_id == 258:  # moving truck
-        RGB_id = 0x501EB4
-        RGB_id_array = [80, 30, 180]
-    elif sem_id == 259:  # moving other vehicles
-        RGB_id = 0x0000FF
-        RGB_id_array = [0, 0, 255]
-    else:
-        RGB_id = 0x000000
-        RGB_id_array = [0, 0, 0]
-
-    return RGB_id, RGB_id_array
-
-
 def get_random_rgb(n):
     n = ((n ^ n >> 15) * 2246822519) & 0xFFFFFFFF
     n = ((n ^ n >> 13) * 3266489917) & 0xFFFFFFFF
@@ -160,25 +40,87 @@ def get_random_rgb(n):
     return tuple(n.to_bytes(3, "big"))
 
 
-# semantic_mapping = {  # bgr
-#     0:  [0, 0, 0],          # "unlabeled", and others ignored
-#     1:  [245, 150, 100],    # "car"
-#     2:  [245, 230, 100],    # "bicycle"
-#     3:  [150, 60, 30],      # "motorcycle"
-#     4:  [180, 30, 80],      # "truck"
-#     5:  [255, 0, 0],        # "other-vehicle"
-#     6:  [30, 30, 255],      # "person"
-#     7:  [200, 40, 255],     # "bicyclist"
-#     8:  [90, 30, 150],      # "motorcyclist"
-#     9:  [255, 0, 255],      # "road"
-#     10: [255, 150, 255],    # "parking"
-#     11: [75, 0, 75],        # "sidewalk"
-#     12: [75, 0, 175],       # "other-ground"
-#     13: [0, 200, 255],      # "building"
-#     14: [50, 120, 255],     # "fence"
-#     15: [0, 175, 0],        # "vegetation"
-#     16: [0, 60, 135],       # "trunk"
-#     17: [80, 240, 150],     # "terrain"
-#     18: [150, 240, 255],    # "pole"
-#     19: [0, 0, 255]         # "traffic-sign"
-#     }
+sem_kitti_learning_map = {
+  0 : 0,     # "unlabeled"
+  1 : 0,     # "outlier" mapped to "unlabeled" --------------------------mapped
+  10: 1,     # "car"
+  11: 2,     # "bicycle"
+  13: 5,     # "bus" mapped to "other-vehicle" --------------------------mapped
+  15: 3,     # "motorcycle"
+  16: 5,     # "on-rails" mapped to "other-vehicle" ---------------------mapped
+  18: 4,     # "truck"
+  20: 5,     # "other-vehicle"
+  30: 6,     # "person"
+  31: 7,     # "bicyclist"
+  32: 8,     # "motorcyclist"
+  40: 9,     # "road"
+  44: 10,    # "parking"
+  48: 11,    # "sidewalk"
+  49: 12,    # "other-ground"
+  50: 13,    # "building"
+  51: 14,    # "fence"
+  52: 20,     # "other-structure" mapped to "unlabeled" ------------------mapped
+  60: 9,     # "lane-marking" to "road" ---------------------------------mapped
+  70: 15,    # "vegetation"
+  71: 16,    # "trunk"
+  72: 17,    # "terrain"
+  80: 18,    # "pole"
+  81: 19,    # "traffic-sign"
+  99: 20,    # "other-object" to "unlabeled" ----------------------------mapped
+  252: 1,    # "moving-car"
+  253: 7,    # "moving-bicyclist"
+  254: 6,    # "moving-person"
+  255: 8,    # "moving-motorcyclist"
+  256: 5,    # "moving-on-rails" mapped to "moving-other-vehicle" ------mapped
+  257: 5,    # "moving-bus" mapped to "moving-other-vehicle" -----------mapped
+  258: 4,    # "moving-truck"
+  259: 5,    # "moving-other-vehicle"
+}
+
+sem_kitti_labels = {
+  0: "unlabeled",
+  1: "car",
+  2: "bicycle",
+  3: "motorcycle",
+  4: "truck",
+  5: "other-vehicle",
+  6: "person",
+  7: "bicyclist",
+  8: "motorcyclist",
+  9: "road",
+  10: "parking",
+  11: "sidewalk",
+  12: "other-ground",
+  13: "building",
+  14: "fence",
+  15: "vegetation",
+  16: "trunk",
+  17: "terrain",
+  18: "pole",
+  19: "traffic-sign",
+  20: "others",
+}
+
+sem_kitti_color_map = { # rgb
+  0: [0, 0, 0],
+  1: [100, 150, 245],
+  2: [100, 230, 245],
+  3: [30, 60, 150],
+  4: [80, 30, 180],
+  5: [0, 0, 255],
+  6: [255, 30, 30],
+  7: [255, 40, 200],
+  8: [150, 30, 90],
+  9: [255, 0, 255],
+  10: [255, 150, 255],
+  11: [75, 0, 75],
+  12: [175, 0, 75],
+  13: [255, 200, 0],
+  14: [255, 120, 50],
+  15: [0, 175, 0],
+  16: [135, 60, 0],
+  17: [150, 240, 80],
+  18: [255, 240, 150],
+  19: [255, 0, 0],
+  20: [30, 30, 30]
+}

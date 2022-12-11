@@ -20,6 +20,7 @@ class Decoder(nn.Module):
                 layers.append(nn.Linear(config.mlp_hidden_dim, config.mlp_hidden_dim, config.mlp_bias_on))
         self.layers = nn.ModuleList(layers)
         self.lout = nn.Linear(config.mlp_hidden_dim, 1, config.mlp_bias_on)
+        self.nclass_out = nn.Linear(config.mlp_hidden_dim, 21, config.mlp_bias_on)
         # self.bn = nn.BatchNorm1d(self.hidden_dim, affine=False)
 
         self.to(config.device)
@@ -50,4 +51,15 @@ class Decoder(nn.Module):
     # predict the occupancy probability
     def occupancy(self, sum_features):
         out = torch.sigmoid(self.sdf(sum_features))  # to [0, 1]
+        return out
+
+    # predict the probabilty of each semantic label
+    def sem_label(self, sum_features):
+        for k, l in enumerate(self.layers):
+            if k == 0:
+                h = F.relu(l(sum_features))
+            else:
+                h = F.relu(l(h))
+
+        out = F.log_softmax(self.nclass_out(h), dim=1)
         return out
