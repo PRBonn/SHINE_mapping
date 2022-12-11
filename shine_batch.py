@@ -34,12 +34,13 @@ def run_shine_mapping_batch():
     # initialize the feature octree
     octree = FeatureOctree(config)
     # initialize the mlp decoder
-    mlp = Decoder(config)
+    mlp_geo = Decoder(config)
+    mlp_sem = Decoder(config)
 
     # dataset
     dataset = LiDARDataset(config, octree)
 
-    mesher = Mesher(config, octree, mlp)
+    mesher = Mesher(config, octree, mlp_geo, mlp_sem)
     
     # for each frame
     print("Load, preprocess and sample data")
@@ -56,7 +57,8 @@ def run_shine_mapping_batch():
 
     # learnable parameters
     octree_feat = list(octree.parameters())
-    mlp_param = list(mlp.parameters())
+    mlp_geo_param = list(mlp_geo.parameters())
+    mlp_sem_param = list(mlp_sem.parameters())
     # learnable sigma for differentiable rendering
     sigma_size = torch.nn.Parameter(torch.ones(1, device=dev)*1.0) 
     # fixed sigma for sdf prediction supervised with BCE loss
@@ -66,7 +68,7 @@ def run_shine_mapping_batch():
     dataset.write_merged_pc(pc_map_path)
 
     # initialize the optimizer
-    opt = setup_optimizer(config, octree_feat, mlp_param, sigma_size)
+    opt = setup_optimizer(config, octree_feat, mlp_geo_param, mlp_sem_param, sigma_size)
 
     octree.print_detail()
 
@@ -80,10 +82,10 @@ def run_shine_mapping_batch():
         step_lr_decay(opt, cur_base_lr, iter, config.lr_decay_step, config.lr_iters_reduce_ratio)
         
         # load batch data (avoid using dataloader because the data are already in gpu, memory vs speed)
-        if config.ray_loss:       
-            coord, sample_depth, ray_depth, normal_label, weight = dataset.get_batch()
-        else:
-            coord, sdf_label, normal_label, weight = dataset.get_batch()
+        if config.ray_loss: # loss computed based on each ray   
+            coord, sample_depth, ray_depth, normal_label, sem_label, weight = dataset.get_batch()
+        else: # loss computed based on each point sample  
+            coord, sdf_label, normal_label, sem_label, weight = dataset.get_batch()
 
         T1 = get_time()
                 
@@ -94,8 +96,10 @@ def run_shine_mapping_batch():
         T2 = get_time()
 
         feature = octree.query_feature(coord) # interpolate and concat the hierachical grid features
-        pred = mlp(feature) # predict the scaled sdf with the feature
-                
+        pred = mlp_geo.sdf(feature) # predict the scaled sdf with the feature
+        if config.semantic_on:
+            sem_pred = mlp_sem.sem_label_prob(feature) # TODO: add semantic rendering for ray loss
+
         T3 = get_time()
         
         surface_mask = weight > 0
@@ -133,6 +137,13 @@ def run_shine_mapping_batch():
             normal_loss = (normal_diff[surface_mask].abs()).norm(2, dim=1).mean() 
             cur_loss += config.weight_n * normal_loss
 
+        # semantic classification loss
+        sem_loss = 0.
+        if config.semantic_on:
+            loss_nll = nn.NLLLoss(reduction='mean')
+            sem_loss = loss_nll(sem_pred, sem_label)
+            cur_loss += config.weight_s * sem_loss
+
         T4 = get_time()
 
         opt.zero_grad(set_to_none=True)
@@ -147,7 +158,7 @@ def run_shine_mapping_batch():
             if config.ray_loss:
                 wandb_log_content = {'iter': iter, 'loss/total_loss': cur_loss, 'loss/render_loss': dr_loss, 'loss/eikonal_loss': eikonal_loss, 'loss/normal_loss': normal_loss, 'para/sigma': sigma_size} 
             else:
-                wandb_log_content = {'iter': iter, 'loss/total_loss': cur_loss, 'loss/sdf_loss': sdf_loss, 'loss/eikonal_loss': eikonal_loss, 'loss/normal_loss': normal_loss} 
+                wandb_log_content = {'iter': iter, 'loss/total_loss': cur_loss, 'loss/sdf_loss': sdf_loss, 'loss/eikonal_loss': eikonal_loss, 'loss/normal_loss': normal_loss, 'loss/sem_loss': sem_loss} 
             wandb_log_content['timing(s)/load'] = T1 - T0
             wandb_log_content['timing(s)/get_indices'] = T2 - T1
             wandb_log_content['timing(s)/inference'] = T3 - T2
@@ -159,13 +170,16 @@ def run_shine_mapping_batch():
         # save checkpoint model
         if (((iter+1) % config.save_freq_iters) == 0 and iter > 0):
             checkpoint_name = 'model/model_iter_' + str(iter+1)
-            save_checkpoint(octree, mlp, opt, run_path, checkpoint_name, iter)
+            save_checkpoint(octree, mlp_geo, mlp_sem, opt, run_path, checkpoint_name, iter)
+            save_geo_decoder(mlp_geo, run_path, checkpoint_name) # geo_decoder only
+            if config.semantic_on:
+                save_sem_decoder(mlp_sem, run_path, checkpoint_name)
 
         # reconstruction by marching cubes
         if (((iter+1) % config.vis_freq_iters) == 0 and iter > 0): 
             print("Begin mesh reconstruction from the implicit map")               
             mesh_path = run_path + '/mesh/mesh_iter_' + str(iter+1) + ".ply"
-            mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path)
+            mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, config.semantic_on)
 
     
 if __name__ == "__main__":

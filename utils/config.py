@@ -66,7 +66,7 @@ class SHINEConfig:
             20  # supporting neighbor count for estimating the normal
         )
 
-        self.semantic_on: bool = False # semantic shine mapping on
+        self.semantic_on: bool = False # semantic shine mapping on [semantic]
 
         # frame-wise downsampling ratio for the merged map point cloud (unit: m)
         self.map_vox_down_m: float = 0.1 
@@ -139,6 +139,8 @@ class SHINEConfig:
         self.weight_e: float = 1e-4
         self.history_weight: float = 1.0
 
+        self.weight_s: float = 1.0  # weight for semantic classification loss
+
         # optimizer
         self.iters: int = 200
         self.opt_adam: bool = True  # use adam or sgd
@@ -182,7 +184,8 @@ class SHINEConfig:
         self.pc_path = config_args["setting"]["pc_path"] 
         self.pose_path = config_args["setting"]["pose_path"]
         self.calib_path = config_args["setting"]["calib_path"]
-        # self.label_path =  config_args["setting"]["label_path"] # optional, when semantic shine mapping is on
+        # optional, when semantic shine mapping is on [semantic]
+        # self.label_path =  config_args["setting"]["label_path"] 
 
         self.load_model = config_args["setting"]["load_model"]
         self.model_path = config_args["setting"]["model_path"]

@@ -7,28 +7,41 @@ import open3d as o3d
 import copy
 import kaolin as kal
 from utils.config import SHINEConfig
+from utils.semantic_kitti_utils import *
 from model.feature_octree import FeatureOctree
 from model.decoder import Decoder
 
 class Mesher():
 
-    def __init__(self, config: SHINEConfig, octree: FeatureOctree, decoder: Decoder):
+    def __init__(self, config: SHINEConfig, octree: FeatureOctree, \
+        geo_decoder: Decoder, sem_decoder: Decoder):
 
         self.config = config
     
         self.octree = octree
-        self.decoder = decoder
+        self.geo_decoder = geo_decoder
+        self.sem_decoder = sem_decoder
         self.device = config.device
         self.dtype = config.dtype
         self.world_scale = config.scale
     
-    def query_sdf(self, coord, bs):
+    def query_points(self, coord, bs, query_sdf = True, query_sem = False, query_mask = True):
         # the coord torch tensor is already scaled in the [-1,1] coordinate system
         sample_count = coord.shape[0]
         iter_n = math.ceil(sample_count/bs)
         check_level = min(self.octree.featured_level_num, self.config.mc_vis_level)-1
-        sdf_pred = np.zeros(sample_count)
-        mc_mask = np.zeros(sample_count)
+        if query_sdf:
+            sdf_pred = np.zeros(sample_count)
+        else: 
+            sdf_pred = None
+        if query_sem:
+            sem_pred = np.zeros(sample_count)
+        else:
+            sem_pred = None
+        if query_mask:
+            mc_mask = np.zeros(sample_count)
+        else:
+            mc_mask = None
         
         with torch.no_grad(): # eval step
             for n in tqdm(range(iter_n)):
@@ -38,21 +51,25 @@ class Mesher():
 
                 self.octree.get_indices_fast(batch_coord) 
                 batch_feature = self.octree.query_feature(batch_coord)
-                batch_sdf = -self.decoder(batch_feature)
+                if query_sdf:
+                    batch_sdf = -self.geo_decoder.sdf(batch_feature)
+                    sdf_pred[head:tail] = batch_sdf.detach().cpu().numpy()
+                if query_sem:
+                    batch_sem = self.sem_decoder.sem_label(batch_feature)
+                    sem_pred[head:tail] = batch_sem.detach().cpu().numpy()
+                if query_mask:
+                    # get the marching cubes mask
+                    # hierarchical_indices: from bottom to top
+                    check_level_indices = self.octree.hierarchical_indices[check_level] 
+                    # if index is -1 for the level, then means the point is not valid under this level
+                    mask_mc = check_level_indices >= 0
+                    # all should be true (all the corner should be valid)
+                    mask_mc = torch.all(mask_mc, dim=1)
+                    mc_mask[head:tail] = mask_mc.detach().cpu().numpy()
+
                 self.octree.set_zero()
-                
-                # get the marching cubes mask
-                # hierarchical_indices: from bottom to top
-                check_level_indices = self.octree.hierarchical_indices[check_level] 
-                # if index is -1 for the level, then means the point is not valid under this level
-                mask_mc = check_level_indices >= 0
-                # all should be true (all the corner should be valid)
-                mask_mc = torch.all(mask_mc, dim=1)
 
-                sdf_pred[head:tail] = batch_sdf.detach().cpu().numpy()
-                mc_mask[head:tail] = mask_mc.detach().cpu().numpy()
-
-        return sdf_pred, mc_mask
+        return sdf_pred, sem_pred, mc_mask
 
     def get_query_from_bbx(self, bbx, voxel_size):
         # bbx and voxel_size are all in the world coordinate system
@@ -78,13 +95,18 @@ class Mesher():
         
         return coord, voxel_num_xyz, voxel_origin
     
-    def assign_sdf_to_bbx(self, sdf_pred, mc_mask, voxel_num_xyz):
-        mc_sdf = sdf_pred.reshape(voxel_num_xyz[0], voxel_num_xyz[1], voxel_num_xyz[2])
-        mc_mask = mc_mask.reshape(voxel_num_xyz[0], voxel_num_xyz[1], voxel_num_xyz[2]).astype(dtype=bool)
-        
-        return mc_sdf, mc_mask
+    def assign_to_bbx(self, sdf_pred, sem_pred, mc_mask, voxel_num_xyz):
+        if sdf_pred is not None:
+            sdf_pred = sdf_pred.reshape(voxel_num_xyz[0], voxel_num_xyz[1], voxel_num_xyz[2])
 
-    
+        if sem_pred is not None:
+            sem_pred = sem_pred.reshape(voxel_num_xyz[0], voxel_num_xyz[1], voxel_num_xyz[2])
+
+        if mc_mask is not None:
+            mc_mask = mc_mask.reshape(voxel_num_xyz[0], voxel_num_xyz[1], voxel_num_xyz[2]).astype(dtype=bool)
+
+        return sdf_pred, sem_pred, mc_mask
+
     def mc_mesh(self, mc_sdf, mc_mask, voxel_size, mc_origin):
         # the input are all already numpy arraies
         verts, faces, normals, values = np.zeros((0, 3)), np.zeros((0, 3)), np.zeros((0, 3)), np.zeros(0)
@@ -95,21 +117,31 @@ class Mesher():
             pass
 
         verts = mc_origin + verts * voxel_size
+        return verts, faces
 
-        # directly use open3d
+    def recon_bbx_mesh(self, bbx, voxel_size, mesh_path, \
+        estimate_sem = False, estimate_normal = True, filter_isolated_mesh = True):
+        # voxel_size in meter
+
+        coord, voxel_num_xyz, voxel_origin = self.get_query_from_bbx(bbx, voxel_size)
+        sdf_pred, _, mc_mask = self.query_points(coord, self.config.infer_bs, True, False)
+        mc_sdf, _, mc_mask = self.assign_to_bbx(sdf_pred, None, mc_mask, voxel_num_xyz)
+        verts, faces = self.mc_mesh(mc_sdf, mc_mask, voxel_size, voxel_origin)
+
+        # directly use open3d to get mesh
         mesh = o3d.geometry.TriangleMesh(
             o3d.utility.Vector3dVector(verts),
             o3d.utility.Vector3iVector(faces)
         )
 
-        return mesh
-
-    def recon_bbx_mesh(self, bbx, voxel_size, mesh_path, \
-        estimate_normal = True, filter_isolated_mesh = True):
-        coord, voxel_num_xyz, voxel_origin = self.get_query_from_bbx(bbx, voxel_size)
-        sdf_pred, mc_mask = self.query_sdf(coord, self.config.infer_bs)
-        mc_sdf, mc_mask = self.assign_sdf_to_bbx(sdf_pred, mc_mask, voxel_num_xyz)
-        mesh = self.mc_mesh(mc_sdf, mc_mask, voxel_size, voxel_origin)
+        if estimate_sem:
+            print("Predict semantic labels of the vertices")
+            verts_scaled = torch.tensor(verts * self.world_scale, dtype=self.dtype, device=self.device)
+            _, verts_sem, _ = self.query_points(verts_scaled, self.config.infer_bs, False, True, False)
+            verts_sem_list = list(verts_sem)
+            verts_sem_rgb = [sem_kitti_color_map[sem_label] for sem_label in verts_sem_list]
+            verts_sem_rgb = np.asarray(verts_sem_rgb)/255.0
+            mesh.vertex_colors = o3d.utility.Vector3dVector(verts_sem_rgb)
 
         if estimate_normal:
             mesh.compute_vertex_normals()

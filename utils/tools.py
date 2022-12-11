@@ -49,12 +49,16 @@ def setup_experiment(config: SHINEConfig):
     return run_path
 
 
-def setup_optimizer(config: SHINEConfig, octree_feat, mlp_param, sigma_size) -> Optimizer:
+def setup_optimizer(config: SHINEConfig, octree_feat, mlp_geo_param, mlp_sem_param, sigma_size) -> Optimizer:
     lr_cur = config.lr
     opt_setting = []
     # weight_decay is for L2 regularization, only applied to MLP
-    mlp_param_opt_dict = {'params': mlp_param, 'lr': lr_cur, 'weight_decay': config.weight_decay} 
-    opt_setting.append(mlp_param_opt_dict)
+    mlp_geo_param_opt_dict = {'params': mlp_geo_param, 'lr': lr_cur, 'weight_decay': config.weight_decay} 
+    opt_setting.append(mlp_geo_param_opt_dict)
+    if config.semantic_on:
+        mlp_sem_param_opt_dict = {'params': mlp_sem_param, 'lr': lr_cur, 'weight_decay': config.weight_decay} 
+        opt_setting.append(mlp_sem_param_opt_dict)
+    # feature octree
     for i in range(config.tree_level_feat):
         # try to also add L2 regularization on the feature octree (results not quite good)
         feat_opt_dict = {'params': octree_feat[config.tree_level_feat-i-1], 'lr': lr_cur} 
@@ -156,18 +160,29 @@ def unfreeze_model(model: nn.Module):
 
 
 def save_checkpoint(
-    feature_octree, decoder_model, optimizer, run_path, checkpoint_name, iters
+    feature_octree, geo_decoder, sem_decoder, optimizer, run_path, checkpoint_name, iters
 ):
     torch.save(
         {
             "iters": iters,
             "feature_octree": feature_octree.state_dict(),
-            "decoder": decoder_model.state_dict(),
+            "geo_decoder": geo_decoder.state_dict(),
+            "sem_decoder": sem_decoder.state_dict(),
             "optimizer": optimizer.state_dict(),
         },
         os.path.join(run_path, f"{checkpoint_name}.pth"),
     )
     print(f"save the model to {run_path}/{checkpoint_name}.pth")
+
+def save_geo_decoder(geo_decoder, run_path, checkpoint_name):
+    torch.save({"geo_decoder": geo_decoder.state_dict()},
+        os.path.join(run_path, f"{checkpoint_name}_geo_decoder.pth"),
+    )
+
+def save_sem_decoder(sem_decoder, run_path, checkpoint_name):
+    torch.save({"sem_decoder": sem_decoder.state_dict()},
+        os.path.join(run_path, f"{checkpoint_name}_sem_decoder.pth"),
+    )
 
 def get_time():
     """

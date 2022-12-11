@@ -54,7 +54,7 @@ class Decoder(nn.Module):
         return out
 
     # predict the probabilty of each semantic label
-    def sem_label(self, sum_features):
+    def sem_label_prob(self, sum_features):
         for k, l in enumerate(self.layers):
             if k == 0:
                 h = F.relu(l(sum_features))
@@ -62,4 +62,8 @@ class Decoder(nn.Module):
                 h = F.relu(l(h))
 
         out = F.log_softmax(self.nclass_out(h), dim=1)
+        return out
+
+    def sem_label(self, sum_features):
+        out = torch.argmax(self.sem_label_prob(sum_features), dim=1)
         return out

@@ -40,13 +40,13 @@ class LiDARDataset(Dataset):
         self.total_pc_count = len(self.pc_filenames)
 
         dev = config.device
-        self.coord_pool = torch.empty((0, 3), device=dev)
-        self.sdf_label_pool = torch.empty((0), device=dev)
-        self.normal_label_pool = torch.empty((0, 3), device=dev)
-        self.sem_label_pool = torch.empty((0), device=dev)
-        self.weight_pool = torch.empty((0), device=dev)
-        self.sample_depth_pool = torch.empty((0), device=dev)
-        self.ray_depth_pool = torch.empty((0), device=dev)
+        self.coord_pool = torch.empty((0, 3), device=dev, dtype=self.dtype)
+        self.sdf_label_pool = torch.empty((0), device=dev, dtype=self.dtype)
+        self.normal_label_pool = torch.empty((0, 3), device=dev, dtype=self.dtype)
+        self.sem_label_pool = torch.empty((0), device=dev, dtype=int)
+        self.weight_pool = torch.empty((0), device=dev, dtype=self.dtype)
+        self.sample_depth_pool = torch.empty((0), device=dev, dtype=self.dtype)
+        self.ray_depth_pool = torch.empty((0), device=dev, dtype=self.dtype)
 
         # feature octree
         self.octree = octree
@@ -353,9 +353,14 @@ class LiDARDataset(Dataset):
             else: 
                 normal_label = None
 
+            if self.sem_label_pool is not None:
+                sem_label = self.sem_label_pool[ray_index * self.ray_sample_count] # one semantic label for one ray
+            else: 
+                sem_label = None
+
             ray_depth = self.ray_depth_pool[ray_index]
 
-            return coord, sample_depth, ray_depth, normal_label, weight
+            return coord, sample_depth, ray_depth, normal_label, sem_label, weight
 
         else: # use point sample
             train_sample_count = self.sdf_label_pool.shape[0]
@@ -367,10 +372,14 @@ class LiDARDataset(Dataset):
                 normal_label = self.normal_label_pool[index, :]
             else: 
                 normal_label = None
+            
+            if self.sem_label_pool is not None:
+                sem_label = self.sem_label_pool[index]
+            else: 
+                sem_label = None
 
-            # sem_label = self.sem_label_pool[index]
             weight = self.weight_pool[index]
 
-            return coord, sdf_label, normal_label, weight
+            return coord, sdf_label, normal_label, sem_label, weight
 
 

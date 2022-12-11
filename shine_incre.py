@@ -40,7 +40,7 @@ def run_shine_mapping_incremental():
     # Load the decoder model
     if config.load_model:
         loaded_model = torch.load(config.model_path)
-        mlp.load_state_dict(loaded_model["decoder"])
+        mlp.load_state_dict(loaded_model["geo_decoder"])
         print("Pretrained decoder loaded")
         freeze_model(mlp) # fixed the decoder
 
@@ -48,7 +48,7 @@ def run_shine_mapping_incremental():
     dataset = LiDARDataset(config, octree)
 
     # mesh reconstructor
-    mesher = Mesher(config, octree, mlp)
+    mesher = Mesher(config, octree, mlp, None)
 
     # Non-blocking visualizer
     vis = MapVisualizer()
@@ -82,14 +82,14 @@ def run_shine_mapping_incremental():
             freeze_model(mlp) # fixed the decoder
         
         octree_feat = list(octree.parameters())
-        opt = setup_optimizer(config, octree_feat, mlp_param, sigma_size)
+        opt = setup_optimizer(config, octree_feat, mlp_param, None, sigma_size)
         octree.print_detail()
 
         T1 = get_time()
 
         for iter in tqdm(range(config.iters)):
             # load batch data (avoid using dataloader because the data are already in gpu, memory vs speed)
-            coord, sdf_label, normal_label, weight = dataset.get_batch()
+            coord, sdf_label, normal_label, sem_label, weight = dataset.get_batch() # do not use the ray loss
             
             octree.get_indices(coord)
             
@@ -100,12 +100,12 @@ def run_shine_mapping_incremental():
             feature = octree.query_feature(coord) 
             
             # predict the scaled sdf with the feature
-            pred = mlp(feature)
+            sdf_pred = mlp.sdf(feature)
 
             # calculate the loss
             cur_loss = 0.
             weight = torch.abs(weight) # weight's sign indicate the sample is around the surface or in the free space
-            sdf_loss = sdf_bce_loss(pred, sdf_label, sigma_sigmoid, weight, config.loss_weight_on, "mean") 
+            sdf_loss = sdf_bce_loss(sdf_pred, sdf_label, sigma_sigmoid, weight, config.loss_weight_on, "mean") 
             cur_loss += sdf_loss
 
             # incremental learning regularization loss 
@@ -118,7 +118,7 @@ def run_shine_mapping_incremental():
             eikonal_loss = 0.
             if config.ekional_loss_on:
                 surface_mask = weight > 0
-                g = gradient(coord, pred)*sigma_sigmoid
+                g = gradient(coord, sdf_pred)*sigma_sigmoid
                 eikonal_loss = ((g[surface_mask].norm(2, dim=-1) - 1.0) ** 2).mean() # MSE with regards to 1  
                 cur_loss += config.weight_e * eikonal_loss
 

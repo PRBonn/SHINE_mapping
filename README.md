@@ -221,6 +221,8 @@ For incremental mapping with replay strategy, use:
 ```
 python shine_incre.py ./config/maicity/maicity_incre_replay.yaml
 ```
+An interactive visualizer would pop up. You can press `space` to pause and resume.
+
 <details>
   <summary>[Expected results (click to expand)]</summary>
 
@@ -281,7 +283,7 @@ As mentioned in the paper, we also compute a fairer accuracy metric using the gr
 
 2. The feature octree is built mainly according to `leaf_vox_size`, `tree_level_world` and `tree_level_feat`. `leaf_vox_size` represents the size of the leaf voxel size in meter. `tree_level_world` and `tree_level_feat` represent the total tree level and the tree levels with latent feature codes, respectively. `tree_level_world` should be large enough to gurantee all the map data lies inside the cube with the size `leaf_vox_size**(tree_level_world+1)`.
 
-3. SHINE Mapping supports both the offline batch mapping and the incremental sequential mapping. For incremental mapping, one can either load a fixed pre-trained decoder from the batching mapping on a similar dataset (set `load_model: True`) or train the decoder for `freeze_after_frame` frames on-the-fly and then freeze it afterwards (set `load_model: False`). 
+3. SHINE Mapping supports both the offline batch mapping and the incremental sequential mapping. For incremental mapping, one can either load a fixed pre-trained decoder from the batching mapping on a similar dataset (set `load_model: True`) or train the decoder for `freeze_after_frame` frames on-the-fly and then freeze it afterwards (set `load_model: False`). The first option would lead to better mapping performance.
 
 </details>
 
