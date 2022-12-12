@@ -53,9 +53,10 @@ def setup_optimizer(config: SHINEConfig, octree_feat, mlp_geo_param, mlp_sem_par
     lr_cur = config.lr
     opt_setting = []
     # weight_decay is for L2 regularization, only applied to MLP
-    mlp_geo_param_opt_dict = {'params': mlp_geo_param, 'lr': lr_cur, 'weight_decay': config.weight_decay} 
-    opt_setting.append(mlp_geo_param_opt_dict)
-    if config.semantic_on:
+    if mlp_geo_param is not None:
+        mlp_geo_param_opt_dict = {'params': mlp_geo_param, 'lr': lr_cur, 'weight_decay': config.weight_decay} 
+        opt_setting.append(mlp_geo_param_opt_dict)
+    if config.semantic_on and mlp_sem_param is not None:
         mlp_sem_param_opt_dict = {'params': mlp_sem_param, 'lr': lr_cur, 'weight_decay': config.weight_decay} 
         opt_setting.append(mlp_sem_param_opt_dict)
     # feature octree

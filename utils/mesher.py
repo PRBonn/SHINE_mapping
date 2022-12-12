@@ -72,6 +72,17 @@ class Mesher():
         return sdf_pred, sem_pred, mc_mask
 
     def get_query_from_bbx(self, bbx, voxel_size):
+        """ get grid query points inside a given bounding box (bbx)
+        Args:
+            bbx: open3d bounding box, in world coordinate system, with unit m 
+            voxel_size: scalar, marching cubes voxel size with unit m
+        Returns:
+            coord: Nx3 torch tensor, the coordinates of all N (axbxc) query points in the scaled
+                kaolin coordinate system [-1,1]
+            voxel_num_xyz: 3dim numpy array, the number of voxels on each axis for the bbx
+            voxel_origin: 3dim numpy array the coordinate of the bottom-left corner of the 3d grids 
+                for marching cubes, in world coordinate system with unit m      
+        """
         # bbx and voxel_size are all in the world coordinate system
         min_bound = bbx.get_min_bound()
         max_bound = bbx.get_max_bound()
@@ -108,6 +119,17 @@ class Mesher():
         return sdf_pred, sem_pred, mc_mask
 
     def mc_mesh(self, mc_sdf, mc_mask, voxel_size, mc_origin):
+        """ use the marching cubes algorithm to get mesh vertices and faces
+        Args:
+            mc_sdf:  a*b*c np.array, 3d grids of sign distance values
+            mc_mask: a*b*c np.array, 3d grids of marching cube masks, marching cubes only on where 
+                the mask is true
+            voxel_size: scalar, marching cubes voxel size with unit m
+            mc_origin: 3*1 np.array, the coordinate of the bottom-left corner of the 3d grids for 
+                marching cubes, in world coordinate system with unit m
+        Returns:
+            ([verts], [faces]), mesh vertices and triangle faces
+        """
         # the input are all already numpy arraies
         verts, faces, normals, values = np.zeros((0, 3)), np.zeros((0, 3)), np.zeros((0, 3)), np.zeros(0)
         try:       
@@ -121,7 +143,8 @@ class Mesher():
 
     def recon_bbx_mesh(self, bbx, voxel_size, mesh_path, \
         estimate_sem = False, estimate_normal = True, filter_isolated_mesh = True):
-        # voxel_size in meter
+        
+        # bbx and voxel_size all with unit m, in world coordinate system
 
         coord, voxel_num_xyz, voxel_origin = self.get_query_from_bbx(bbx, voxel_size)
         sdf_pred, _, mc_mask = self.query_points(coord, self.config.infer_bs, True, False)
@@ -135,7 +158,7 @@ class Mesher():
         )
 
         if estimate_sem:
-            print("Predict semantic labels of the vertices")
+            print("predict semantic labels of the vertices")
             verts_scaled = torch.tensor(verts * self.world_scale, dtype=self.dtype, device=self.device)
             _, verts_sem, _ = self.query_points(verts_scaled, self.config.infer_bs, False, True, False)
             verts_sem_list = list(verts_sem)

@@ -102,7 +102,7 @@ class SHINEConfig:
         self.continual_learning_reg: bool = True
         # regularization based
         self.lambda_forget: float = 1e5
-        self.cal_importance_weight_down_rate: int = 10
+        self.cal_importance_weight_down_rate: int = 5
         
         # replay based
         self.history_sample_ratio: int = 1

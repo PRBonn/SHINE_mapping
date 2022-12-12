@@ -4,8 +4,8 @@ setting:
   pc_path: "xxx/data/mai_city/ply/sequences/01/velodyne"
   pose_path: "xxx/data/mai_city/ply/sequences/01/poses.txt"
   calib_path: "xxx/data/mai_city/ply/sequences/01/calib.txt"
-  load_model: False
-  model_path: "" 
+  load_model: True
+  model_path: "./pretrained/geo_decoder_8dim.pth" 
   first_frame_ref: False
   begin_frame: 0
   end_frame: 100
@@ -45,16 +45,16 @@ loss:
   weight_e: 0.1
 continual:
   continual_learning_reg: True
-  lambda_forget: 1e4 # the larger this value, the model would be less likely to forget
+  lambda_forget: 1e6 # the larger this value, the model would be less likely to forget
 optimizer:
-  iters: 30  # iterations per frame
+  iters: 50  # iterations per frame
   batch_size: 4096
   learning_rate: 0.01
   weight_decay: 1e-7 # l2 regularization
 eval:
   wandb_vis_on: False # log to wandb or not
   vis_freq_iters: 0 
-  save_freq_iters: 10000 # save the model and octree every x iterations
+  save_freq_iters: 0 # save the model and octree every x iterations
   mesh_freq_frame: 5 # reconstruct the mesh every x frames
   mc_res_m: 0.2 # reconstruction marching cubes resolution
   mc_vis_level: 1 
