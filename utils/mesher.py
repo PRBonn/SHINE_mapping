@@ -26,6 +26,16 @@ class Mesher():
         self.world_scale = config.scale
     
     def query_points(self, coord, bs, query_sdf = True, query_sem = False, query_mask = True):
+        """ query the sdf value, semantic label and marching cubes mask for points
+        Args:
+            coord: Nx3 torch tensor, the coordinates of all N (axbxc) query points in the scaled
+                kaolin coordinate system [-1,1]
+            bs: batch size for the inference
+        Returns:
+            sdf_pred: Ndim numpy array, signed distance value (scaled) at each query point
+            sem_pred: Ndim numpy array, semantic label prediction at each query point
+            mc_mask:  Ndim bool numpy array, marching cubes mask at each query point
+        """
         # the coord torch tensor is already scaled in the [-1,1] coordinate system
         sample_count = coord.shape[0]
         iter_n = math.ceil(sample_count/bs)
@@ -107,6 +117,18 @@ class Mesher():
         return coord, voxel_num_xyz, voxel_origin
     
     def assign_to_bbx(self, sdf_pred, sem_pred, mc_mask, voxel_num_xyz):
+        """ assign the queried sdf, semantic label and marching cubes mask back to the 3D grids in the specified bounding box
+        Args:
+            sdf_pred: Ndim np.array
+            sem_pred: Ndim np.array
+            mc_mask:  Ndim bool np.array
+            voxel_num_xyz: 3dim numpy array, the number of voxels on each axis for the bbx
+        Returns:
+            sdf_pred:  a*b*c np.array, 3d grids of sign distance values
+            sem_pred:  a*b*c np.array, 3d grids of semantic labels
+            mc_mask:   a*b*c np.array, 3d grids of marching cube masks, marching cubes only on where 
+                the mask is true
+        """
         if sdf_pred is not None:
             sdf_pred = sdf_pred.reshape(voxel_num_xyz[0], voxel_num_xyz[1], voxel_num_xyz[2])
 
@@ -143,7 +165,8 @@ class Mesher():
 
     def recon_bbx_mesh(self, bbx, voxel_size, mesh_path, \
         estimate_sem = False, estimate_normal = True, filter_isolated_mesh = True):
-        
+        # reconstruct and save the (semantic) mesh from the feature octree the decoders within a
+        # given bounding box.
         # bbx and voxel_size all with unit m, in world coordinate system
 
         coord, voxel_num_xyz, voxel_origin = self.get_query_from_bbx(bbx, voxel_size)
