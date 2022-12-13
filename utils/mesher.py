@@ -99,6 +99,9 @@ class Mesher():
         len_xyz = max_bound - min_bound
         voxel_num_xyz = (np.ceil(len_xyz/voxel_size)+self.config.pad_voxel*2).astype(np.int_)
         voxel_origin = min_bound-self.config.pad_voxel*voxel_size
+        # pad an additional voxel underground to gurantee the reconstruction of ground
+        voxel_origin[2]-=voxel_size
+        voxel_num_xyz[2]+=1
 
         x = torch.arange(voxel_num_xyz[0], dtype=torch.int16, device=self.device)
         y = torch.arange(voxel_num_xyz[1], dtype=torch.int16, device=self.device)
@@ -137,6 +140,7 @@ class Mesher():
 
         if mc_mask is not None:
             mc_mask = mc_mask.reshape(voxel_num_xyz[0], voxel_num_xyz[1], voxel_num_xyz[2]).astype(dtype=bool)
+            mc_mask[:,:,0:1] = True # dirty fix for the ground issue
 
         return sdf_pred, sem_pred, mc_mask
 
@@ -164,7 +168,7 @@ class Mesher():
         return verts, faces
 
     def recon_bbx_mesh(self, bbx, voxel_size, mesh_path, \
-        estimate_sem = False, estimate_normal = True, filter_isolated_mesh = True):
+        estimate_sem = False, estimate_normal = True, filter_isolated_mesh = False):
         # reconstruct and save the (semantic) mesh from the feature octree the decoders within a
         # given bounding box.
         # bbx and voxel_size all with unit m, in world coordinate system

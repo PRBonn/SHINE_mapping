@@ -167,7 +167,7 @@ class SHINEConfig:
         
         # marching cubes related
         self.mc_res_m: float = 0.1
-        self.pad_voxel: int = 1
+        self.pad_voxel: int = 0
         self.mc_vis_level: int = 1
         self.mc_mask_on: bool = True # use mask for marching cubes to avoid the artifacts
         

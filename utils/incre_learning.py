@@ -8,9 +8,9 @@ from utils.loss import *
 def cal_feature_importance(data: LiDARDataset, octree: FeatureOctree, mlp: Decoder, 
     sigma, bs, down_rate=1, loss_reduction='mean', loss_weight_on = False):
     
-    shuffle_indice = torch.randperm(data.coord_pool.shape[0])
-    shuffle_coord = data.coord_pool[shuffle_indice]
-    shuffle_label = data.sdf_label_pool[shuffle_indice]
+    # shuffle_indice = torch.randperm(data.coord_pool.shape[0])
+    # shuffle_coord = data.coord_pool[shuffle_indice]
+    # shuffle_label = data.sdf_label_pool[shuffle_indice]
 
     sample_count = data.coord_pool.shape[0]
     batch_interval = bs*down_rate
@@ -21,8 +21,8 @@ def cal_feature_importance(data: LiDARDataset, octree: FeatureOctree, mlp: Decod
         # batch_coord = data.coord_pool[head:tail:down_rate]
         # batch_label = data.sdf_label_pool[head:tail:down_rate]
 
-        batch_coord = shuffle_coord[head:tail:down_rate]
-        batch_label = shuffle_label[head:tail:down_rate]
+        batch_coord = data.coord_pool[head:tail:down_rate]
+        batch_label = data.sdf_label_pool[head:tail:down_rate]
         # batch_weight = data.weight_pool[head:tail:down_rate]
         count = batch_label.shape[0]
             

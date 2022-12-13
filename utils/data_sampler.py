@@ -134,6 +134,7 @@ class dataSampler():
                              space_carving_level,
                              stop_depth_thre,
                              inter_dist_thre):
+        # space carving sampling (deprecated, to polish)
 
         shift_points = points_torch - sensor_origin_torch
         # distances = torch.linalg.norm(shift_points, dim=1, keepdim=True)
