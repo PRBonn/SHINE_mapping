@@ -22,7 +22,7 @@ sampler:
   surface_sample_range_m: 0.2
   surface_sample_n: 3
   free_sample_begin_ratio: 0.3
-  free_sample_end_ratio: 1.1
+  free_sample_end_dist: 0.5
   free_sample_n: 3
 octree:
   leaf_vox_size: 0.2

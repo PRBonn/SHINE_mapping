@@ -117,7 +117,7 @@ def run_shine_mapping_batch():
         else: # sdf regression loss
             weight = torch.abs(weight) # weight's sign indicate the sample is around the surface or in the free space
             if config.main_loss_type == "sdf_bce": # our proposed method
-                sdf_loss = sdf_bce_loss(pred, sdf_label, sigma_sigmoid, weight, config.loss_weight_on) 
+                sdf_loss = sdf_bce_loss(pred, sdf_label, sigma_sigmoid, weight, config.loss_weight_on, config.loss_reduction) 
             elif config.main_loss_type == "sdf_l1": 
                 sdf_loss = sdf_diff_loss(pred, sdf_label, weight, config.scale, l2_loss=False)
             elif config.main_loss_type == "sdf_l2":

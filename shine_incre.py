@@ -35,26 +35,26 @@ def run_shine_mapping_incremental():
     # initialize the feature octree
     octree = FeatureOctree(config)
     # initialize the mlp decoder
-    mlp = Decoder(config)
+    geo_mlp = Decoder(config)
 
     # Load the decoder model
     if config.load_model:
         loaded_model = torch.load(config.model_path)
-        mlp.load_state_dict(loaded_model["geo_decoder"])
+        geo_mlp.load_state_dict(loaded_model["geo_decoder"])
         print("Pretrained decoder loaded")
-        freeze_model(mlp) # fixed the decoder
+        freeze_model(geo_mlp) # fixed the decoder
 
     # dataset
     dataset = LiDARDataset(config, octree)
 
     # mesh reconstructor
-    mesher = Mesher(config, octree, mlp, None)
+    mesher = Mesher(config, octree, geo_mlp, None)
 
     # Non-blocking visualizer
     vis = MapVisualizer()
 
     # learnable parameters
-    mlp_param = list(mlp.parameters())
+    geo_mlp_param = list(geo_mlp.parameters())
     # learnable sigma for differentiable rendering
     sigma_size = torch.nn.Parameter(torch.ones(1, device=dev)*1.0) 
     # fixed sigma for sdf prediction supervised with BCE loss
@@ -79,10 +79,10 @@ def run_shine_mapping_incremental():
 
         if processed_frame == config.freeze_after_frame: # freeze the decoder after certain frame
             print("Freeze the decoder")
-            freeze_model(mlp) # fixed the decoder
+            freeze_model(geo_mlp) # fixed the decoder
         
         octree_feat = list(octree.parameters())
-        opt = setup_optimizer(config, octree_feat, mlp_param, None, sigma_size)
+        opt = setup_optimizer(config, octree_feat, geo_mlp_param, None, sigma_size)
         octree.print_detail()
 
         T1 = get_time()
@@ -100,12 +100,12 @@ def run_shine_mapping_incremental():
             feature = octree.query_feature(coord) 
             
             # predict the scaled sdf with the feature
-            sdf_pred = mlp.sdf(feature)
+            sdf_pred = geo_mlp.sdf(feature)
 
             # calculate the loss
             cur_loss = 0.
             weight = torch.abs(weight) # weight's sign indicate the sample is around the surface or in the free space
-            sdf_loss = sdf_bce_loss(sdf_pred, sdf_label, sigma_sigmoid, weight, config.loss_weight_on, "mean") 
+            sdf_loss = sdf_bce_loss(sdf_pred, sdf_label, sigma_sigmoid, weight, config.loss_weight_on, config.loss_reduction) 
             cur_loss += sdf_loss
 
             # incremental learning regularization loss 
@@ -135,7 +135,10 @@ def run_shine_mapping_incremental():
         
         # calculate the importance of each octree feature
         if config.continual_learning_reg:
-            cal_feature_importance(dataset, octree, mlp, sigma_sigmoid, config.bs, config.cal_importance_weight_down_rate)
+            opt.zero_grad(set_to_none=True)
+            cal_feature_importance(dataset, octree, geo_mlp, sigma_sigmoid, config.bs, \
+                config.cal_importance_weight_down_rate, config.loss_reduction)
+
 
         T2 = get_time()
 

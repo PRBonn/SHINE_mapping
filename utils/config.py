@@ -89,7 +89,8 @@ class SHINEConfig:
         self.surface_sample_range_m: float = 0.5 # 
         self.surface_sample_n: int = 5
         self.free_sample_begin_ratio: float = 0.3
-        self.free_sample_end_ratio: float = 1.0
+        # self.free_sample_end_ratio: float = 1.0 # deprecated
+        self.free_sample_end_dist: float = 0.5 # maximum distance after the surface (unit: m)
         self.free_sample_n: int = 2
 
         # space carving sampling related (deprecated)
@@ -102,7 +103,7 @@ class SHINEConfig:
         self.continual_learning_reg: bool = True
         # regularization based
         self.lambda_forget: float = 1e5
-        self.cal_importance_weight_down_rate: int = 5
+        self.cal_importance_weight_down_rate: int = 1
         
         # replay based
         self.history_sample_ratio: int = 1
@@ -122,6 +123,8 @@ class SHINEConfig:
         self.ray_loss: bool = False  # one loss on a whole ray (including depth estimation loss or the differentiable rendering loss)
         # the main loss type, select from the sample sdf loss ('sdf_bce', 'sdf_l1', 'sdf_l2') and the ray rendering loss ('dr', 'dr_neus')
         self.main_loss_type: str = 'sdf_bce'
+
+        self.loss_reduction: str = 'mean' # select from 'mean' and 'sum'
         
         self.sigma_sigmoid_m: float = 0.1
         self.sigma_scale_constant: float = 0.0 # scale factor adding to the constant sigma value (linear with the distance) [deprecated]
@@ -161,9 +164,13 @@ class SHINEConfig:
         self.vis_freq_iters: int = 100
         self.save_freq_iters: int = 100
         self.mesh_freq_frame: int = 1  # do the reconstruction per x frames
-        self.pad_voxel: int = 0
+        
+        # marching cubes related
         self.mc_res_m: float = 0.1
+        self.pad_voxel: int = 1
         self.mc_vis_level: int = 1
+        self.mc_mask_on: bool = True # use mask for marching cubes to avoid the artifacts
+        
         self.infer_bs: int = 4096
         self.occ_binary_mc: bool = False
         self.grid_loss_vis_on: bool = False
@@ -212,7 +219,7 @@ class SHINEConfig:
         self.surface_sample_range_m = config_args["sampler"]["surface_sample_range_m"]
         self.surface_sample_n = config_args["sampler"]["surface_sample_n"]
         self.free_sample_begin_ratio = config_args["sampler"]["free_sample_begin_ratio"]
-        self.free_sample_end_ratio = config_args["sampler"]["free_sample_end_ratio"]
+        self.free_sample_end_dist = config_args["sampler"]["free_sample_end_dist"]
         self.free_sample_n = config_args["sampler"]["free_sample_n"]
 
         # label

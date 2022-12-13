@@ -170,7 +170,7 @@ class Mesher():
         # bbx and voxel_size all with unit m, in world coordinate system
 
         coord, voxel_num_xyz, voxel_origin = self.get_query_from_bbx(bbx, voxel_size)
-        sdf_pred, _, mc_mask = self.query_points(coord, self.config.infer_bs, True, False)
+        sdf_pred, _, mc_mask = self.query_points(coord, self.config.infer_bs, True, False, self.config.mc_mask_on)
         mc_sdf, _, mc_mask = self.assign_to_bbx(sdf_pred, None, mc_mask, voxel_num_xyz)
         verts, faces = self.mc_mesh(mc_sdf, mc_mask, voxel_size, voxel_origin)
 

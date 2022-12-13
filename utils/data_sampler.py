@@ -27,8 +27,7 @@ class dataSampler():
         freespace_sample_n = self.config.free_sample_n
         all_sample_n = surface_sample_n+freespace_sample_n
         free_min_ratio = self.config.free_sample_begin_ratio
-        free_max_ratio = self.config.free_sample_end_ratio
-        free_diff_ratio = free_max_ratio - free_min_ratio
+        free_sample_end_dist_scaled = self.config.free_sample_end_dist * self.config.scale
         
         sigma_base = self.config.sigma_sigmoid_m * self.config.scale
         # sigma_scale_constant = self.config.sigma_scale_constant
@@ -48,8 +47,12 @@ class dataSampler():
             surface_sem_label_tensor = label_torch.repeat(1, surface_sample_n).transpose(0,1)
         
         # Part 2. free space uniform sampling
-        free_sample_dist_ratio = torch.rand(point_num*freespace_sample_n, 1, device=dev)*free_diff_ratio + free_min_ratio
         repeated_dist = distances.repeat(freespace_sample_n,1)
+        free_max_ratio = free_sample_end_dist_scaled / repeated_dist + 1.0
+        free_diff_ratio = free_max_ratio - free_min_ratio
+
+        free_sample_dist_ratio = torch.rand(point_num*freespace_sample_n, 1, device=dev)*free_diff_ratio + free_min_ratio
+        
         free_sample_displacement = (free_sample_dist_ratio - 1.0) * repeated_dist
         if label_torch is not None:
             free_sem_label_tensor = torch.zeros_like(repeated_dist)
