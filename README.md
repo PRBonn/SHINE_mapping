@@ -208,10 +208,10 @@ python shine_incre.py ./config/maicity/maicity_incre_reg.yaml
 <details>
   <summary>[Expected results (click to expand)]</summary>
 
-For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree.
+For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm leaf voxel size for the feature octree.
 
 <p align="center">
-  <video src="https://user-images.githubusercontent.com/34207278/206582367-f2f4a66a-83f8-4a90-a2db-e104b5985bdd.mp4" width="50%" />
+  <video src="https://user-images.githubusercontent.com/34207278/207639680-1060d60f-8ef1-4908-8d1f-9303f9020d4d.mp4" width="50%" />
 </p>
 
 </details>
@@ -220,15 +220,16 @@ For incremental mapping with replay strategy, use:
 ```
 python shine_incre.py ./config/maicity/maicity_incre_replay.yaml
 ```
+
 An interactive visualizer would pop up. You can press `space` to pause and resume.
 
 <details>
   <summary>[Expected results (click to expand)]</summary>
 
-For the sake of efficiency, we use a 50cm leaf voxel size for the feature octree.
+For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm leaf voxel size for the feature octree.
 
 <p align="center">
-  <video src="https://user-images.githubusercontent.com/34207278/206581857-0b38bf26-ef00-4983-a903-4a58ae7ff001.mp4" width="50%" />
+  <video src="https://user-images.githubusercontent.com/34207278/207639846-4f80e55c-7574-45a5-9987-9c7ec6eb20e5.mp4" width="50%" />
 </p>
 
 </details>
