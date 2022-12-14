@@ -183,8 +183,7 @@ The estimated pose file can be find in `./results/latest/velodyne.txt`. You can 
 
 We take the MaiCity dataset as an example to show how SHINE Mapping works. You can simply replace maicity with your dataset name in the config file path, such as `./config/[dataset]/[dataset]_[xxx].yaml`.
 
-The results will be stored with your experiment name with the starting timestamp in the `output_root` directory as what you set in the config file. You can find the reconstructed mesh (`*.ply` format) and optimized model in `mesh` and `model` folder, respectively.
-
+The results will be stored with your experiment name with the starting timestamp in the `output_root` directory as what you set in the config file. You can find the reconstructed mesh (`*.ply` format) and optimized model in `mesh` and `model` folder, respectively. If the `save_map` option is truned on, then you can find the grid sdf map in `map` folder.
 
 For mapping based on offline batch processing, use:
 ```

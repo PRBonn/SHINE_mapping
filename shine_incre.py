@@ -62,6 +62,8 @@ def run_shine_mapping_incremental():
 
     processed_frame = 0
     total_iter = 0
+    if config.continual_learning_reg:
+        config.loss_reduction = "sum" # other-wise "mean"
 
     # for each frame
     for frame_id in tqdm(range(dataset.total_pc_count)):
@@ -130,7 +132,8 @@ def run_shine_mapping_incremental():
             total_iter += 1
 
             if config.wandb_vis_on:
-                wandb_log_content = {'iter': total_iter, 'loss/total_loss': cur_loss, 'loss/sdf_loss': sdf_loss, 'loss/reg':reg_loss, 'loss/eikonal_loss': eikonal_loss} 
+                wandb_log_content = {'iter': total_iter, 'loss/total_loss': cur_loss, 'loss/sdf_loss': sdf_loss, \
+                    'loss/reg':reg_loss, 'loss/eikonal_loss': eikonal_loss} 
                 wandb.log(wandb_log_content)
         
         # calculate the importance of each octree feature
@@ -141,13 +144,14 @@ def run_shine_mapping_incremental():
 
 
         T2 = get_time()
-
+        
         # reconstruction by marching cubes
         if processed_frame == 0 or (processed_frame+1) % config.mesh_freq_frame == 0:
             vis_mesh = True 
             # print("Begin reconstruction from implicit mapn")               
             mesh_path = run_path + '/mesh/mesh_frame_' + str(frame_id+1) + ".ply"
-            mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path)
+            map_path = run_path + '/map/sdf_map_frame_' + str(frame_id+1) + ".ply"
+            mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path)
 
         T3 = get_time()
 

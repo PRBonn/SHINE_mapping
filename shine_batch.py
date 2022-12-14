@@ -180,7 +180,8 @@ def run_shine_mapping_batch():
         if (((iter+1) % config.vis_freq_iters) == 0 and iter > 0): 
             print("Begin mesh reconstruction from the implicit map")               
             mesh_path = run_path + '/mesh/mesh_iter_' + str(iter+1) + ".ply"
-            mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, config.semantic_on)
+            map_path = run_path + '/map/sdf_map_iter_' + str(iter+1) + ".ply"
+            mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.semantic_on)
 
     
 if __name__ == "__main__":

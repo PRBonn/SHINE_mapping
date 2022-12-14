@@ -103,7 +103,7 @@ class SHINEConfig:
         self.continual_learning_reg: bool = True
         # regularization based
         self.lambda_forget: float = 1e5
-        self.cal_importance_weight_down_rate: int = 1
+        self.cal_importance_weight_down_rate: int = 1 # set it larger to save the consuming time
         
         # replay based
         self.history_sample_ratio: int = 1
@@ -124,7 +124,7 @@ class SHINEConfig:
         # the main loss type, select from the sample sdf loss ('sdf_bce', 'sdf_l1', 'sdf_l2') and the ray rendering loss ('dr', 'dr_neus')
         self.main_loss_type: str = 'sdf_bce'
 
-        self.loss_reduction: str = 'mean' # select from 'mean' and 'sum'
+        self.loss_reduction: str = 'mean' # select from 'mean' and 'sum' (for incremental mapping)
         
         self.sigma_sigmoid_m: float = 0.1
         self.sigma_scale_constant: float = 0.0 # scale factor adding to the constant sigma value (linear with the distance) [deprecated]
@@ -175,7 +175,7 @@ class SHINEConfig:
         self.occ_binary_mc: bool = False
         self.grid_loss_vis_on: bool = False
         self.mesh_vis_on: bool = True
-        self.save_map: bool = False
+        self.save_map: bool = False # save the sdf map or not, the sdf would be saved in the intensity channel
 
         # initialization
         self.scale: float = 1.0
@@ -340,6 +340,9 @@ class SHINEConfig:
         ]  # marching cubes grid sampling interval (unit: m)
         self.mc_vis_level = config_args["eval"][
             "mc_vis_level"
+        ]
+        self.save_map = config_args["eval"][
+            "save_map"
         ] 
         # tree level starting for reconstruction and visualization, the larger of this value, 
         # the larger holes would be filled (better completion), but at the same time more artifacts 

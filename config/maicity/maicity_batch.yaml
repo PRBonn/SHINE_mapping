@@ -22,7 +22,7 @@ sampler:
   surface_sample_range_m: 0.2
   surface_sample_n: 3
   free_sample_begin_ratio: 0.3
-  free_sample_end_dist: 0.5
+  free_sample_end_dist: 0.8
   free_sample_n: 3
 octree:
   leaf_vox_size: 0.2
@@ -58,3 +58,4 @@ eval:
   mesh_freq_frame: 1 
   mc_res_m: 0.1 # reconstruction marching cubes resolution
   mc_vis_level: 1 # mask the voxels used for marching cubes reconstruction according to the octree level
+  save_map: False # save the sdf map or not

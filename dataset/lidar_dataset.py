@@ -154,7 +154,7 @@ class LiDARDataset(Dataset):
 
         self.map_bbx = self.map_down_pc.get_axis_aligned_bounding_box()
         # and scale to [-1,1] coordinate system
-        frame_pc_s = frame_pc.scale(self.config.scale, np.zeros(3))
+        frame_pc_s = frame_pc.scale(self.config.scale, center=(0,0,0))
 
         frame_pc_s_torch = torch.tensor(np.asarray(frame_pc_s.points), dtype=self.dtype, device=dev)
 
@@ -258,6 +258,8 @@ class LiDARDataset(Dataset):
 
         sem_labels_coarse = (np.asarray(sem_labels_coarse)/255.0).reshape((-1, 1)).repeat(3, axis=1) # label 
 
+        # better to use o3d.t.geometry.PointCloud(device)
+        # then you can use sdf_map_pc.point['positions'], sdf_map_pc.point['intensities'], sdf_map_pc.point['labels']
         pc_out = o3d.geometry.PointCloud()
         pc_out.points = o3d.utility.Vector3dVector(points)
         pc_out.colors = o3d.utility.Vector3dVector(sem_labels_coarse)

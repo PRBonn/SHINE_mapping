@@ -34,8 +34,8 @@ class FeatureOctree(nn.Module):
         self.device = config.device
 
         # Initialize the look up tables 
-        self.corners_lookup_tables = [] # from corner morton to corner index
-        self.nodes_lookup_tables = []   # from nodes morton to corner index
+        self.corners_lookup_tables = [] # from corner morton to corner index (top-down)
+        self.nodes_lookup_tables = []   # from nodes morton to corner index (top-down)
         # Initialize the look up table for each level, each is a dictionary
         for l in range(self.max_level+1):
             self.corners_lookup_tables.append({})
@@ -57,6 +57,9 @@ class FeatureOctree(nn.Module):
         self.features_last_frame = [] # hierarchical features for the last frame
 
         self.to(config.device)
+    
+    # def get_octree(self, level):
+
 
     # the last element of the each level of the hier_features is the trashbin element
     # after the optimization, we need to set it back to zero vector
@@ -82,22 +85,23 @@ class FeatureOctree(nn.Module):
         # [0 1 2 3 ... max_level-1 max_level]
         spc = kal.ops.conversions.unbatched_pointcloud_to_spc(surface_points, self.max_level) 
         pyramid = spc.pyramids[0].cpu()
-        for i in range(self.max_level+1):
-            free_level_num = self.max_level - self.featured_level_num + 1
-            if i < free_level_num: # free levels
+        free_level_num = self.max_level - self.featured_level_num + 1
+        for i in range(self.max_level+1): # for each level (top-down)            
+            if i < free_level_num: # free levels (skip), only need to consider the featured levels
                 continue
-            # level storing features
+            # level storing features (i>=free_level_num)
             nodes = spc.point_hierarchies[pyramid[1, i]:pyramid[1, i+1]]
-            nodes_morton = kal.ops.spc.points_to_morton(nodes).cpu().numpy().tolist()
+            nodes_morton = kal.ops.spc.points_to_morton(nodes).cpu().numpy().tolist() # nodes at certain level
             new_nodes_index = []
             for idx in range(len(nodes_morton)):
                 if nodes_morton[idx] not in self.nodes_lookup_tables[i]:
                     new_nodes_index.append(idx) # nodes to corner dictionary: key is the morton code
-            new_nodes = nodes[new_nodes_index]
+            new_nodes = nodes[new_nodes_index] # get the newly added nodes
             if new_nodes.shape[0] == 0:
                 continue
-            corners = kal.ops.spc.points_to_corners(new_nodes).reshape(-1,3)
+            corners = kal.ops.spc.points_to_corners(new_nodes).reshape(-1,3) 
             corners_unique = torch.unique(corners, dim=0)
+            # mortons of the coners from the new scan
             corners_morton = kal.ops.spc.points_to_morton(corners_unique).cpu().numpy().tolist()
             if len(self.corners_lookup_tables[i]) == 0: # for the first frame
                 corners_dict = dict(zip(corners_morton, range(len(corners_morton))))
@@ -114,7 +118,7 @@ class FeatureOctree(nn.Module):
             else: # update for new frames
                 pre_size = len(self.corners_lookup_tables[i])
                 for m in corners_morton:
-                    if m not in self.corners_lookup_tables[i]:
+                    if m not in self.corners_lookup_tables[i]: # add new keys
                         self.corners_lookup_tables[i][m] = len(self.corners_lookup_tables[i])
                 new_feature_num = len(self.corners_lookup_tables[i]) - pre_size
                 new_fts = self.feature_std*torch.randn(new_feature_num+1, self.feature_dim, device=self.device) 
@@ -166,15 +170,14 @@ class FeatureOctree(nn.Module):
             current_level = self.max_level - i
             points = kal.ops.spc.quantize_points(x,current_level) # quantize to interger coords
             points_morton = kal.ops.spc.points_to_morton(points).cpu().numpy().tolist() # convert to 1d morton code for the voxel center
-            features_last_row = [-1 for t in range(8)] # if not in the look up table, then assign -1
+            features_last_row = [-1 for t in range(8)] # if not in the look up table, then assign all -1
             # look up the 8 corner nodes' unique indices for each 1d morton code in the look up table [nx8], the most time-consuming part 
             # [actually a kind of hashing realized by python dictionary]
-            cur_lookup_table = self.nodes_lookup_tables[current_level]
-            indices_list = [cur_lookup_table.get(p,features_last_row) for p in points_morton]
+            indices_list = [self.nodes_lookup_tables[current_level].get(p,features_last_row) for p in points_morton]
             # if p is not found in the key lists of cur_lookup_table, use features_last_row, 
             # which is the all-zero trashbin vector of the level's feature
-            indices_torch = torch.tensor(indices_list ,device=self.device) 
-            self.hierarchical_indices.append(indices_torch) # l level {nx8} 
+            indices_torch = torch.tensor(indices_list, device=self.device) 
+            self.hierarchical_indices.append(indices_torch) # l level {nx8}  # bottom-up
     
     def list_duplicates(self, seq):
         tally = defaultdict(list)
@@ -184,7 +187,7 @@ class FeatureOctree(nn.Module):
                                 
     # speed up for the batch sdf inferencing during meshing
     # points in the same voxel would be grouped and getting indices together
-    # This function contains some problem which would make the mesh worse, check it later (TODO)
+    # This function contains some problem which would make the mesh worse, check it later (TODO: BUGS)
     def get_indices_fast(self, x):
         self.hierarchical_indices = []
         for i in range(self.featured_level_num): # bottom-up

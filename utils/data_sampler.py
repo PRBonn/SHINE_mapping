@@ -17,7 +17,7 @@ class dataSampler():
     def sample(self, points_torch, 
                sensor_origin_torch,
                normal_torch,
-               label_torch):
+               sem_label_torch):
 
         dev = self.config.device
 
@@ -43,8 +43,8 @@ class dataSampler():
         
         repeated_dist = distances.repeat(surface_sample_n,1)
         surface_sample_dist_ratio = surface_sample_displacement/repeated_dist + 1.0 # 1.0 means on the surface
-        if label_torch is not None:
-            surface_sem_label_tensor = label_torch.repeat(1, surface_sample_n).transpose(0,1)
+        if sem_label_torch is not None:
+            surface_sem_label_tensor = sem_label_torch.repeat(1, surface_sample_n).transpose(0,1)
         
         # Part 2. free space uniform sampling
         repeated_dist = distances.repeat(freespace_sample_n,1)
@@ -54,7 +54,7 @@ class dataSampler():
         free_sample_dist_ratio = torch.rand(point_num*freespace_sample_n, 1, device=dev)*free_diff_ratio + free_min_ratio
         
         free_sample_displacement = (free_sample_dist_ratio - 1.0) * repeated_dist
-        if label_torch is not None:
+        if sem_label_torch is not None:
             free_sem_label_tensor = torch.zeros_like(repeated_dist)
         
         # all together
@@ -88,15 +88,15 @@ class dataSampler():
             weight_tensor *= dropoff_weight
         
         # give a flag indicating the type of the sample [negative: freespace, positive: surface]
-        weight_tensor[point_num*surface_sample_n:-1] *= -1.0 
+        weight_tensor[point_num*surface_sample_n:] *= -1.0 
         
         # ray-wise depth
         distances /= world_scale # unit: m
         distances = distances.squeeze(1)
 
         # assign sdf labels to the samples
-        # projective distance as the label: behind +, in-front -
-        sdf_label_tensor = all_sample_displacement.squeeze(1) 
+        # projective distance as the label: behind +, in-front - 
+        sdf_label_tensor = all_sample_displacement.squeeze(1)  # scaled [-1, 1]
 
         # assign the normal label to the samples
         normal_label_tensor = None
@@ -105,7 +105,7 @@ class dataSampler():
         
         # assign the semantic label to the samples (including free space as the 0 label)
         sem_label_tensor = None
-        if label_torch is not None:
+        if sem_label_torch is not None:
             sem_label_tensor = torch.cat((surface_sem_label_tensor, free_sem_label_tensor),0).int()
 
         # Convert from the all ray surface + all ray free order to the 
@@ -119,7 +119,7 @@ class dataSampler():
 
         if normal_torch is not None:
             normal_label_tensor = normal_label_tensor.reshape(all_sample_n, -1, 3).transpose(0, 1).reshape(-1, 3)
-        if label_torch is not None:
+        if sem_label_torch is not None:
             sem_label_tensor = sem_label_tensor.reshape(all_sample_n, -1).transpose(0, 1).reshape(-1)
 
         # ray distance (distances) is not repeated

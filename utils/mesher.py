@@ -57,9 +57,9 @@ class Mesher():
             for n in tqdm(range(iter_n)):
                 head = n*bs
                 tail = min((n+1)*bs, sample_count)
-                batch_coord = coord[head:tail]
+                batch_coord = coord[head:tail, :]
 
-                self.octree.get_indices_fast(batch_coord) 
+                self.octree.get_indices(batch_coord) # slower but more stable, get_indices_fast has bugs (TODO)
                 batch_feature = self.octree.query_feature(batch_coord)
                 if query_sdf:
                     batch_sdf = -self.geo_decoder.sdf(batch_feature)
@@ -69,15 +69,17 @@ class Mesher():
                     sem_pred[head:tail] = batch_sem.detach().cpu().numpy()
                 if query_mask:
                     # get the marching cubes mask
-                    # hierarchical_indices: from bottom to top
+                    # hierarchical_indices: bottom-up
                     check_level_indices = self.octree.hierarchical_indices[check_level] 
                     # if index is -1 for the level, then means the point is not valid under this level
                     mask_mc = check_level_indices >= 0
+                    # print(mask_mc.shape)
                     # all should be true (all the corner should be valid)
                     mask_mc = torch.all(mask_mc, dim=1)
                     mc_mask[head:tail] = mask_mc.detach().cpu().numpy()
+                    # but for scimage's marching cubes, the top right corner's mask should also be true to conduct marching cubes
 
-                self.octree.set_zero()
+                # self.octree.set_zero()
 
         return sdf_pred, sem_pred, mc_mask
 
@@ -119,6 +121,27 @@ class Mesher():
         
         return coord, voxel_num_xyz, voxel_origin
     
+    def generate_sdf_map(self, coord, sdf_pred, mc_mask, map_path):
+        device = o3d.core.Device("CPU:0")
+        dtype = o3d.core.float32
+        sdf_map_pc = o3d.t.geometry.PointCloud(device)
+
+        # scaling back to the world coordinate system
+        coord /= self.world_scale
+        coord_np = coord.detach().cpu().numpy()
+
+        sdf_pred_world = sdf_pred * self.config.logistic_gaussian_ratio*self.config.sigma_sigmoid_m # convert to unit: m
+
+        # the sdf (unit: m) would be saved in the intensity channel
+        sdf_map_pc.point['positions'] = o3d.core.Tensor(coord_np, dtype, device)
+        sdf_map_pc.point['intensities'] = o3d.core.Tensor(np.expand_dims(sdf_pred_world, axis=1), dtype, device) # scaled sdf prediction
+        if mc_mask is not None:
+            # the marching cubes mask would be saved in the labels channel (indicating the hierarchical position in the octree)
+            sdf_map_pc.point['labels'] = o3d.core.Tensor(np.expand_dims(mc_mask, axis=1), o3d.core.int32, device) # mask
+
+        o3d.t.io.write_point_cloud(map_path, sdf_map_pc, print_progress=False)
+        print("save the sdf map to %s" % (map_path))
+    
     def assign_to_bbx(self, sdf_pred, sem_pred, mc_mask, voxel_num_xyz):
         """ assign the queried sdf, semantic label and marching cubes mask back to the 3D grids in the specified bounding box
         Args:
@@ -140,7 +163,7 @@ class Mesher():
 
         if mc_mask is not None:
             mc_mask = mc_mask.reshape(voxel_num_xyz[0], voxel_num_xyz[1], voxel_num_xyz[2]).astype(dtype=bool)
-            mc_mask[:,:,0:1] = True # dirty fix for the ground issue
+            mc_mask[:,:,0:1] = True # dirty fix for the ground issue 
 
         return sdf_pred, sem_pred, mc_mask
 
@@ -167,7 +190,7 @@ class Mesher():
         verts = mc_origin + verts * voxel_size
         return verts, faces
 
-    def recon_bbx_mesh(self, bbx, voxel_size, mesh_path, \
+    def recon_bbx_mesh(self, bbx, voxel_size, mesh_path, map_path, \
         estimate_sem = False, estimate_normal = True, filter_isolated_mesh = False):
         # reconstruct and save the (semantic) mesh from the feature octree the decoders within a
         # given bounding box.
@@ -175,6 +198,8 @@ class Mesher():
 
         coord, voxel_num_xyz, voxel_origin = self.get_query_from_bbx(bbx, voxel_size)
         sdf_pred, _, mc_mask = self.query_points(coord, self.config.infer_bs, True, False, self.config.mc_mask_on)
+        if self.config.save_map:
+            self.generate_sdf_map(coord, sdf_pred, mc_mask, map_path)
         mc_sdf, _, mc_mask = self.assign_to_bbx(sdf_pred, None, mc_mask, voxel_num_xyz)
         verts, faces = self.mc_mesh(mc_sdf, mc_mask, voxel_size, voxel_origin)
 

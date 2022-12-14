@@ -4,7 +4,7 @@ setting:
   pc_path: "xxx/data/mai_city/ply/sequences/01/velodyne"
   pose_path: "xxx/data/mai_city/ply/sequences/01/poses.txt"
   calib_path: "xxx/data/mai_city/ply/sequences/01/calib.txt"
-  load_model: True
+  load_model: True # load the pretrained decoder model (optional)
   model_path: "./pretrained/geo_decoder_8dim.pth" 
   first_frame_ref: False
   begin_frame: 0
@@ -14,15 +14,15 @@ setting:
   gpu_id: "0"
 process:
   min_range_m: 1.5
-  pc_radius_m: 25.0  # distance filter for each frame
+  pc_radius_m: 20.0  # distance filter for each frame
   rand_downsample: False # use random or voxel downsampling
-  vox_down_m: 0.05
+  vox_down_m: 0.03
   rand_down_r: 0.2
 sampler:
-  surface_sample_range_m: 0.2
+  surface_sample_range_m: 0.4
   surface_sample_n: 3
   free_sample_begin_ratio: 0.3
-  free_sample_end_dist: 0.5
+  free_sample_end_dist: 0.8
   free_sample_n: 3
 octree:
   leaf_vox_size: 0.5
@@ -47,10 +47,10 @@ continual:
   continual_learning_reg: False
   lambda_forget: 0
 optimizer:
-  iters: 30  # iterations per frame
+  iters: 50  # iterations per frame
   batch_size: 4096
   learning_rate: 0.01
-  weight_decay: 1e-7 # l2 regularization
+  weight_decay: 0 # l2 regularization
 eval:
   wandb_vis_on: False # log to wandb or not
   vis_freq_iters: 0 
@@ -58,3 +58,4 @@ eval:
   mesh_freq_frame: 5 # reconstruct the mesh every x frames
   mc_res_m: 0.2 # reconstruction marching cubes resolution
   mc_vis_level: 1 
+  save_map: False # save the sdf map or not
