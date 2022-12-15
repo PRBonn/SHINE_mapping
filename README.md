@@ -255,6 +255,12 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
   <img src="https://user-images.githubusercontent.com/34207278/206718688-a8bfb786-6439-435b-a225-c596aef9ab64.png" width="70%" />
 </p>
 
+**Wild Place Forests**
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/34207278/207911217-c27a52c9-7233-4db9-a1fd-3487e59e6529.png" width="70%" />
+</p>
+
 
 </details>
 
