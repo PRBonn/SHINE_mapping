@@ -29,7 +29,7 @@ def run_shine_mapping_incremental():
             "Please provide the path to the config file.\nTry: python shine_incre.py xxx/xxx_config.yaml"
         )
 
-    run_path = setup_experiment(config)
+    run_path = setup_experiment_and_return_run_path(config)
     dev = config.device
 
     # initialize the feature octree
@@ -66,7 +66,7 @@ def run_shine_mapping_incremental():
         config.loss_reduction = "sum" # other-wise "mean"
 
     # for each frame
-    for frame_id in tqdm(range(dataset.total_pc_count)):
+    for frame_id in tqdm(range(dataset.total_frame_count)):
         if (frame_id < config.begin_frame or frame_id > config.end_frame or \
             frame_id % config.every_frame != 0): 
             continue

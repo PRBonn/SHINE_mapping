@@ -18,7 +18,7 @@ from utils.config import SHINEConfig
 
 
 # setup this run
-def setup_experiment(config: SHINEConfig): 
+def setup_experiment_and_return_run_path(config: SHINEConfig): 
 
     os.environ["NUMEXPR_MAX_THREADS"] = str(multiprocessing.cpu_count())
     os.environ["CUDA_VISIBLE_DEVICES"] = str(config.gpu_id)

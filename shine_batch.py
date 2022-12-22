@@ -17,7 +17,7 @@ from model.feature_octree import FeatureOctree
 from model.decoder import Decoder
 from dataset.lidar_dataset import LiDARDataset
 
-
+# 我理解的就是离线重建，因为每一帧点云的pose均已知；
 def run_shine_mapping_batch():
 
     config = SHINEConfig()
@@ -28,15 +28,15 @@ def run_shine_mapping_batch():
             "Please provide the path to the config file.\nTry: python shine_batch.py xxx/xxx_config.yaml"
         )
     
-    run_path = setup_experiment(config)
+    run_path = setup_experiment_and_return_run_path(config)
     dev = config.device
 
-    # initialize the feature octree
-    octree = FeatureOctree(config)
     # initialize the mlp decoder
     mlp_geo = Decoder(config)
     mlp_sem = Decoder(config)
 
+    # initialize the feature octree
+    octree = FeatureOctree(config)
     # dataset
     dataset = LiDARDataset(config, octree)
 
@@ -44,7 +44,7 @@ def run_shine_mapping_batch():
     
     # for each frame
     print("Load, preprocess and sample data")
-    for frame_id in tqdm(range(dataset.total_pc_count)):
+    for frame_id in tqdm(range(dataset.total_frame_count)):
         if (frame_id < config.begin_frame or frame_id > config.end_frame or \
             frame_id % config.every_frame != 0): 
             continue
@@ -64,6 +64,7 @@ def run_shine_mapping_batch():
     # fixed sigma for sdf prediction supervised with BCE loss
     sigma_sigmoid = config.logistic_gaussian_ratio*config.sigma_sigmoid_m*config.scale
     
+    # 保存点云
     pc_map_path = run_path + '/map/pc_map_down.ply'
     dataset.write_merged_pc(pc_map_path)
 
@@ -75,7 +76,7 @@ def run_shine_mapping_batch():
     # begin training
     print("Begin mapping")
     cur_base_lr = config.lr
-    for iter in tqdm(range(config.iters)):
+    for iter in tqdm(range(config.iters)): # 默认迭代 20,000 次
         
         T0 = get_time()
         # learning rate decay

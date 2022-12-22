@@ -37,7 +37,7 @@ class LiDARDataset(Dataset):
 
         # point cloud files
         self.pc_filenames = sorted(os.listdir(config.pc_path))
-        self.total_pc_count = len(self.pc_filenames)
+        self.total_frame_count = len(self.pc_filenames)
 
         dev = config.device
         self.coord_pool = torch.empty((0, 3), device=dev, dtype=self.dtype)
@@ -64,7 +64,7 @@ class LiDARDataset(Dataset):
         if config.first_frame_ref:
             begin_flag = False
             begin_pose_inv = np.eye(4)
-            for frame_id in range(self.total_pc_count):
+            for frame_id in range(self.total_frame_count):
                 if (
                     frame_id < config.begin_frame
                     or frame_id > config.end_frame

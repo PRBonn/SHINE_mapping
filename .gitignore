@@ -1,0 +1,7 @@
+*.bin
+*.pth
+*.txt
+*.bag
+*.ply
+*.pyc
+/data
