@@ -89,9 +89,9 @@ def run_shine_mapping_incremental():
 
         T1 = get_time()
 
-        for iter in tqdm(range(config.iters)):
+        for _ in tqdm(range(config.iters)):
             # load batch data (avoid using dataloader because the data are already in gpu, memory vs speed)
-            coord, sdf_label, normal_label, sem_label, weight = dataset.get_batch() # do not use the ray loss
+            coord, sdf_label, _, _, weight = dataset.get_batch() # do not use the ray loss
             
             octree.get_indices(coord)
             
@@ -112,32 +112,32 @@ def run_shine_mapping_incremental():
 
             # incremental learning regularization loss 
             reg_loss = 0.
-            if config.continual_learning_reg:
+            if config.continual_learning_reg: # 按照论文里面的描述，这里应该是开启的
                 reg_loss = octree.cal_regularization()
                 cur_loss += config.lambda_forget * reg_loss
 
             # optional ekional loss
             eikonal_loss = 0.
-            if config.ekional_loss_on:
+            if config.ekional_loss_on:  # 按照论文里面的描述，这里应该是开启的
                 surface_mask = weight > 0
                 g = gradient(coord, sdf_pred)*sigma_sigmoid
                 eikonal_loss = ((g[surface_mask].norm(2, dim=-1) - 1.0) ** 2).mean() # MSE with regards to 1  
                 cur_loss += config.weight_e * eikonal_loss
 
             opt.zero_grad(set_to_none=True)
-            cur_loss.backward() # this is the slowest part (about 10x the forward time)
+            cur_loss.backward() # this is the slowest part (about 10x the forward time) 这里作者说了下，反向传播的时间消耗是前向传播的10倍
             opt.step()
 
-            octree.set_zero() # set the trashbin feature vector back to 0 after the feature update
+            octree.set_zero() # set the trashbin feature vector back to 0 after the feature update. 我挺好奇这个 trashbin feature vector 是什么东西？垃圾箱？
             total_iter += 1
 
-            if config.wandb_vis_on:
+            if config.wandb_vis_on: # 这个是 weigth and bias 小工具，我们可以暂时不用
                 wandb_log_content = {'iter': total_iter, 'loss/total_loss': cur_loss, 'loss/sdf_loss': sdf_loss, \
                     'loss/reg':reg_loss, 'loss/eikonal_loss': eikonal_loss} 
                 wandb.log(wandb_log_content)
         
         # calculate the importance of each octree feature
-        if config.continual_learning_reg:
+        if config.continual_learning_reg: # 按照论文里面的描述，这里应该是开启的
             opt.zero_grad(set_to_none=True)
             cal_feature_importance(dataset, octree, geo_mlp, sigma_sigmoid, config.bs, \
                 config.cal_importance_weight_down_rate, config.loss_reduction)
@@ -145,8 +145,8 @@ def run_shine_mapping_incremental():
 
         T2 = get_time()
         
-        # reconstruction by marching cubes
-        if processed_frame == 0 or (processed_frame+1) % config.mesh_freq_frame == 0:
+        # reconstruction by marching cubes. 我觉得他每次都调用 marching cube，感觉好浪费时间
+        if processed_frame == 0 or (processed_frame+1) % config.mesh_freq_frame == 0: # 按照作者默认的参数，他每 5 帧重建一次
             vis_mesh = True 
             # print("Begin reconstruction from implicit mapn")               
             mesh_path = run_path + '/mesh/mesh_frame_' + str(frame_id+1) + ".ply"
@@ -162,7 +162,7 @@ def run_shine_mapping_incremental():
         else: # only show frame and current point cloud
             vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref)
 
-        if config.wandb_vis_on:
+        if config.wandb_vis_on: # 这个是 weigth and bias 小工具，我们可以暂时不用，而且默认是 False
             wandb_log_content = {'frame': processed_frame, 'timing(s)/preprocess': T1-T0, 'timing(s)/mapping': T2-T1, 'timing(s)/reconstruct': T3-T2} 
             wandb.log(wandb_log_content)
 
