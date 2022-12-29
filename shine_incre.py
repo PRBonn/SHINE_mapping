@@ -51,7 +51,7 @@ def run_shine_mapping_incremental():
     mesher = Mesher(config, octree, geo_mlp, None)
 
     # Non-blocking visualizer
-    vis = MapVisualizer()
+    # vis = MapVisualizer()
 
     # learnable parameters
     geo_mlp_param = list(geo_mlp.parameters())
@@ -89,13 +89,13 @@ def run_shine_mapping_incremental():
 
         T1 = get_time()
 
-        for _ in tqdm(range(config.iters)):
+        for _ in tqdm(range(config.iters)): # 增量式重建迭代次数默认为 50 次
             # load batch data (avoid using dataloader because the data are already in gpu, memory vs speed)
-            coord, sdf_label, _, _, weight = dataset.get_batch() # do not use the ray loss
+            coord, sdf_label, _, _, weight = dataset.get_batch() # do not use the ray loss，这里是为什么呢？为什么不能用 ray loss 呢？
             
             octree.get_indices(coord)
             
-            if config.ekional_loss_on:
+            if config.ekional_loss_on: # 这个为什么默认 关掉了呢？
                 coord.requires_grad_()
             
             # interpolate and concat the hierachical grid features
@@ -118,7 +118,7 @@ def run_shine_mapping_incremental():
 
             # optional ekional loss
             eikonal_loss = 0.
-            if config.ekional_loss_on:  # 按照论文里面的描述，这里应该是开启的
+            if config.ekional_loss_on:  # 按照论文里面的描述，这里应该是开启的，实际上并没有开启，这是为什么呢？
                 surface_mask = weight > 0
                 g = gradient(coord, sdf_pred)*sigma_sigmoid
                 eikonal_loss = ((g[surface_mask].norm(2, dim=-1) - 1.0) ** 2).mean() # MSE with regards to 1  
@@ -147,7 +147,7 @@ def run_shine_mapping_incremental():
         
         # reconstruction by marching cubes. 我觉得他每次都调用 marching cube，感觉好浪费时间
         if processed_frame == 0 or (processed_frame+1) % config.mesh_freq_frame == 0: # 按照作者默认的参数，他每 5 帧重建一次
-            vis_mesh = True 
+            # vis_mesh = True 
             # print("Begin reconstruction from implicit mapn")               
             mesh_path = run_path + '/mesh/mesh_frame_' + str(frame_id+1) + ".ply"
             map_path = run_path + '/map/sdf_map_frame_' + str(frame_id+1) + ".ply"
@@ -158,9 +158,10 @@ def run_shine_mapping_incremental():
         if vis_mesh: 
             cur_mesh = o3d.io.read_triangle_mesh(mesh_path)
             cur_mesh.compute_vertex_normals()
-            vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref, cur_mesh)
+            # vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref, cur_mesh)
         else: # only show frame and current point cloud
-            vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref)
+            print("we do not display the mesh in the test")
+            # vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref)
 
         if config.wandb_vis_on: # 这个是 weigth and bias 小工具，我们可以暂时不用，而且默认是 False
             wandb_log_content = {'frame': processed_frame, 'timing(s)/preprocess': T1-T0, 'timing(s)/mapping': T2-T1, 'timing(s)/reconstruct': T3-T2} 

@@ -49,7 +49,7 @@ def setup_experiment_and_return_run_path(config: SHINEConfig):
     return run_path
 
 
-def setup_optimizer(config: SHINEConfig, octree_feat, mlp_geo_param, mlp_sem_param, sigma_size) -> Optimizer:
+def setup_optimizer(config: SHINEConfig, octree_feat, mlp_geo_param, mlp_sem_param, sigma_size) -> Optimizer: # 这里使用了 python3 的新特性，函数注解，config 参数的类型为 SHINEConfig，该函数的返回值类型为 Optimizer
     lr_cur = config.lr
     opt_setting = []
     # weight_decay is for L2 regularization, only applied to MLP

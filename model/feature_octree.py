@@ -24,13 +24,13 @@ class FeatureOctree(nn.Module):
         super().__init__()
 
         # [0 1 2 3 ... max_level-1 max_level], 0 level is the root, which have 8 corners.
-        self.max_level = config.tree_level_world 
+        self.max_level = config.tree_level_world # 作者默认是 12 级
         # the number of levels with feature (begin from bottom)
-        self.leaf_vox_size = config.leaf_vox_size 
-        self.featured_level_num = config.tree_level_feat 
-        self.feature_dim = config.feature_dim
-        self.feature_std = config.feature_std
-        self.polynomial_interpolation = config.poly_int_on
+        self.leaf_vox_size = config.leaf_vox_size # 作者默认是 0.2m
+        self.featured_level_num = config.tree_level_feat # 作者默认是 3
+        self.feature_dim = config.feature_dim # 8
+        self.feature_std = config.feature_std # 这里作者好像默认写死为 0.05 了
+        self.polynomial_interpolation = config.poly_int_on # True
         self.device = config.device
 
         # Initialize the look up tables 

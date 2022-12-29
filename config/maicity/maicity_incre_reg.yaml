@@ -1,14 +1,14 @@
 setting:
   name: "maicity_incre_reg"
   output_root: "./experiments/"
-  pc_path: "xxx/data/mai_city/ply/sequences/01/velodyne"
-  pose_path: "xxx/data/mai_city/ply/sequences/01/poses.txt"
-  calib_path: "xxx/data/mai_city/ply/sequences/01/calib.txt"
+  pc_path: "./data/mai_city/ply/sequences/01/velodyne"
+  pose_path: "./data/mai_city/ply/sequences/01/poses.txt"
+  calib_path: "./data/mai_city/ply/sequences/01/calib.txt"
   load_model: True # load the pretrained decoder model (optional)
   model_path: "./pretrained/geo_decoder_8dim.pth" 
   first_frame_ref: False
   begin_frame: 0
-  end_frame: 100
+  end_frame: 20
   every_frame: 1 # 1 means does not skip
   device: "cuda"
   gpu_id: "0"
