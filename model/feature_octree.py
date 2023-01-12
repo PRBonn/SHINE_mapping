@@ -50,6 +50,7 @@ class FeatureOctree(nn.Module):
         # but only for the featured levels
         self.hier_features = nn.ParameterList([]) 
 
+        # the temporal stuffs that can be cleared
         # hierachical feature grid indices for the input batch point
         self.hierarchical_indices = [] 
         # bottom-up: stored from the leaf node level (dim 0)
@@ -61,7 +62,6 @@ class FeatureOctree(nn.Module):
         self.to(config.device)
     
     # def get_octree(self, level):
-
 
     # the last element of the each level of the hier_features is the trashbin element
     # after the optimization, we need to set it back to zero vector
@@ -83,6 +83,12 @@ class FeatureOctree(nn.Module):
 
     def is_empty(self):
         return len(self.hier_features) == 0
+
+    # clear the temp data that is not needed
+    def clear_temp(self):
+        self.hierarchical_indices = [] 
+        self.importance_weight = []
+        self.features_last_frame = []
 
     # update the octree according to new observations
     # if incremental_on = True, then we additional store the last frames' feature for regularization based incremental mapping

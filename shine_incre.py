@@ -48,6 +48,9 @@ def run_shine_mapping_incremental():
         if config.semantic_on:
             sem_mlp.load_state_dict(loaded_model["sem_decoder"])
             freeze_model(sem_mlp) # fixed the decoder
+        if 'feature_octree' in loaded_model.keys(): # also load the feature octree  
+            octree = loaded_model["feature_octree"]
+            octree.print_detail()
 
     # tracker
     # tracker = Tracker(config, octree, geo_mlp, sem_mlp)

@@ -167,7 +167,7 @@ def save_checkpoint(
     torch.save(
         {
             "iters": iters,
-            "feature_octree": feature_octree.state_dict(),
+            "feature_octree": feature_octree, # save the whole NN module (the hierachical features and the indexing structure)
             "geo_decoder": geo_decoder.state_dict(),
             "sem_decoder": sem_decoder.state_dict(),
             "optimizer": optimizer.state_dict(),

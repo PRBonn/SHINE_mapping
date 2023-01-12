@@ -46,6 +46,9 @@ def run_shine_mapping_batch():
         if config.semantic_on:
             sem_mlp.load_state_dict(loaded_model["sem_decoder"])
             freeze_model(sem_mlp) # fixed the decoder
+        if 'feature_octree' in loaded_model.keys(): # also load the feature octree  
+            octree = loaded_model["feature_octree"]
+            octree.print_detail()
 
     # dataset
     dataset = LiDARDataset(config, octree)
@@ -180,6 +183,7 @@ def run_shine_mapping_batch():
         # save checkpoint model
         if (((iter+1) % config.save_freq_iters) == 0 and iter > 0):
             checkpoint_name = 'model/model_iter_' + str(iter+1)
+            octree.clear_temp()
             save_checkpoint(octree, geo_mlp, sem_mlp, opt, run_path, checkpoint_name, iter)
             save_decoder(geo_mlp, sem_mlp, run_path, checkpoint_name) # save both the gro and sem decoders
 
