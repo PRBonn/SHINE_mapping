@@ -205,6 +205,8 @@ For incremental mapping with regularization strategy, use:
 python shine_incre.py ./config/maicity/maicity_incre_reg.yaml
 ```
 
+An interactive visualizer would pop up. You can press `space` to pause and resume.
+
 <details>
   <summary>[Expected results (click to expand)]</summary>
 
@@ -255,6 +257,12 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
   <img src="https://user-images.githubusercontent.com/34207278/206718688-a8bfb786-6439-435b-a225-c596aef9ab64.png" width="70%" />
 </p>
 
+**Wild Place Forests**
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/34207278/207911217-c27a52c9-7233-4db9-a1fd-3487e59e6529.png" width="70%" />
+</p>
+
 
 </details>
 
@@ -279,7 +287,7 @@ As mentioned in the paper, we also compute a fairer accuracy metric using the gr
 <details>
   <summary>[Details (click to expand)]</summary>
 
-1. You can play with different loss functions for SHINE Mapping. With the `ray_loss: False` option, the loss would be calculated from the sdf at each sample point. In this case, you can then select from `sdf_bce` (the proposed method), `sdf_l1` and  `sdf_l2` loss as the `main_loss_type`. With the `ray_loss: True` option, the loss would be calculated from each ray conatining multiple point samples as a depth rendering procedure. In this case,  you can select from `dr` and `dr_neus` as the `main_loss_type`. Additionally, you can set `ekional_loss_on` option to turn on/off the Ekional loss and use `weight_e` as its weight.
+1. You can play with different loss functions for SHINE Mapping. With the `ray_loss: False` option, the loss would be calculated from the sdf at each sample point. In this case, you can then select from `sdf_bce` (the proposed method), `sdf_l1` and  `sdf_l2` loss as the `main_loss_type`. With the `ray_loss: True` option, the loss would be calculated from each ray conatining multiple point samples as a depth rendering procedure. In this case,  you can select from `dr` and `dr_neus` as the `main_loss_type`. According to our experiments, using our proposed `sdf_bce` loss can achieve the best reconstruction efficiently. We can get a decent reconstruction of a scene with several hundred frames in just one minute. Additionally, you can set `ekional_loss_on` option to turn on/off the Ekional loss and use `weight_e` as its weight.
 
 2. The feature octree is built mainly according to `leaf_vox_size`, `tree_level_world` and `tree_level_feat`. `leaf_vox_size` represents the size of the leaf voxel size in meter. `tree_level_world` and `tree_level_feat` represent the total tree level and the tree levels with latent feature codes, respectively. `tree_level_world` should be large enough to gurantee all the map data lies inside the cube with the size `leaf_vox_size**(tree_level_world+1)`.
 

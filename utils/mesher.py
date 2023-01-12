@@ -13,6 +13,8 @@ from model.decoder import Decoder
 
 class Mesher():
 
+    # TODO: add methods to reconstruct large scale meshs without memory issues [marching cubes in blocks]
+
     def __init__(self, config: SHINEConfig, octree: FeatureOctree, \
         geo_decoder: Decoder, sem_decoder: Decoder):
 
@@ -22,8 +24,11 @@ class Mesher():
         self.geo_decoder = geo_decoder
         self.sem_decoder = sem_decoder
         self.device = config.device
+        self.cur_device = self.device
         self.dtype = config.dtype
         self.world_scale = config.scale
+
+        self.global_transform = np.eye(4)
     
     def query_points(self, coord, bs, query_sdf = True, query_sem = False, query_mask = True):
         """ query the sdf value, semantic label and marching cubes mask for points
@@ -58,9 +63,9 @@ class Mesher():
                 head = n*bs
                 tail = min((n+1)*bs, sample_count)
                 batch_coord = coord[head:tail, :]
-
-                self.octree.get_indices(batch_coord) # slower but more stable, get_indices_fast has bugs (TODO)
-                batch_feature = self.octree.query_feature(batch_coord)
+                if self.cur_device == "cpu" and self.device == "cuda":
+                    batch_coord = batch_coord.cuda()
+                batch_feature = self.octree.query_feature(batch_coord) # query features
                 if query_sdf:
                     batch_sdf = -self.geo_decoder.sdf(batch_feature)
                     sdf_pred[head:tail] = batch_sdf.detach().cpu().numpy()
@@ -78,9 +83,7 @@ class Mesher():
                     mask_mc = torch.all(mask_mc, dim=1)
                     mc_mask[head:tail] = mask_mc.detach().cpu().numpy()
                     # but for scimage's marching cubes, the top right corner's mask should also be true to conduct marching cubes
-
-                # self.octree.set_zero()
-
+                    
         return sdf_pred, sem_pred, mc_mask
 
     def get_query_from_bbx(self, bbx, voxel_size):
@@ -105,9 +108,13 @@ class Mesher():
         voxel_origin[2]-=voxel_size
         voxel_num_xyz[2]+=1
 
-        x = torch.arange(voxel_num_xyz[0], dtype=torch.int16, device=self.device)
-        y = torch.arange(voxel_num_xyz[1], dtype=torch.int16, device=self.device)
-        z = torch.arange(voxel_num_xyz[2], dtype=torch.int16, device=self.device)
+        voxel_count_total = voxel_num_xyz[0] * voxel_num_xyz[1] * voxel_num_xyz[2]
+        if voxel_count_total > 1e8: # TODO: avoid gpu memory issue, dirty fix
+            self.cur_device = "cpu" # firstly save in cpu memory (which would be larger than gpu's)
+            print("too much query points, use cpu memory")
+        x = torch.arange(voxel_num_xyz[0], dtype=torch.int16, device=self.cur_device)
+        y = torch.arange(voxel_num_xyz[1], dtype=torch.int16, device=self.cur_device)
+        z = torch.arange(voxel_num_xyz[2], dtype=torch.int16, device=self.cur_device)
 
         # order: [0,0,0], [0,0,1], [0,0,2], [0,1,0], [0,1,1], [0,1,2] ...
         x, y, z = torch.meshgrid(x, y, z, indexing='ij') 
@@ -115,7 +122,7 @@ class Mesher():
         coord = torch.stack((x.flatten(), y.flatten(), z.flatten())).transpose(0, 1).float()
         # transform to world coordinate system
         coord *= voxel_size
-        coord += torch.tensor(voxel_origin, dtype=self.dtype, device=self.device)
+        coord += torch.tensor(voxel_origin, dtype=self.dtype, device=self.cur_device)
         # scaling to the [-1, 1] coordinate system
         coord *= self.world_scale
         
@@ -139,6 +146,8 @@ class Mesher():
             # the marching cubes mask would be saved in the labels channel (indicating the hierarchical position in the octree)
             sdf_map_pc.point['labels'] = o3d.core.Tensor(np.expand_dims(mc_mask, axis=1), o3d.core.int32, device) # mask
 
+        # global transform (to world coordinate system) before output
+        sdf_map_pc.transform(self.global_transform)
         o3d.t.io.write_point_cloud(map_path, sdf_map_pc, print_progress=False)
         print("save the sdf map to %s" % (map_path))
     
@@ -163,7 +172,7 @@ class Mesher():
 
         if mc_mask is not None:
             mc_mask = mc_mask.reshape(voxel_num_xyz[0], voxel_num_xyz[1], voxel_num_xyz[2]).astype(dtype=bool)
-            mc_mask[:,:,0:1] = True # dirty fix for the ground issue 
+            mc_mask[:,:,0:1] = True # TODO: dirty fix for the ground issue 
 
         return sdf_pred, sem_pred, mc_mask
 
@@ -191,7 +200,9 @@ class Mesher():
         return verts, faces
 
     def recon_bbx_mesh(self, bbx, voxel_size, mesh_path, map_path, \
-        estimate_sem = False, estimate_normal = True, filter_isolated_mesh = False):
+        estimate_sem = False, estimate_normal = True, \
+        filter_isolated_mesh = False, filter_free_space_vertices = True):
+        
         # reconstruct and save the (semantic) mesh from the feature octree the decoders within a
         # given bounding box.
         # bbx and voxel_size all with unit m, in world coordinate system
@@ -209,7 +220,7 @@ class Mesher():
             o3d.utility.Vector3iVector(faces)
         )
 
-        if estimate_sem:
+        if estimate_sem: 
             print("predict semantic labels of the vertices")
             verts_scaled = torch.tensor(verts * self.world_scale, dtype=self.dtype, device=self.device)
             _, verts_sem, _ = self.query_points(verts_scaled, self.config.infer_bs, False, True, False)
@@ -218,11 +229,16 @@ class Mesher():
             verts_sem_rgb = np.asarray(verts_sem_rgb)/255.0
             mesh.vertex_colors = o3d.utility.Vector3dVector(verts_sem_rgb)
 
+            # filter the freespace vertices
+            if filter_free_space_vertices:
+                non_freespace_idx = verts_sem <= 0
+                mesh.remove_vertices_by_mask(non_freespace_idx)
+
         if estimate_normal:
             mesh.compute_vertex_normals()
         
         if filter_isolated_mesh:
-            filter_cluster_min_tri = 1000
+            filter_cluster_min_tri = 100
             # print("Cluster connected triangles")
             triangle_clusters, cluster_n_triangles, cluster_area = (mesh.cluster_connected_triangles())
             triangle_clusters = np.asarray(triangle_clusters)
@@ -234,6 +250,9 @@ class Mesher():
             triangles_to_remove = cluster_n_triangles[triangle_clusters] < filter_cluster_min_tri
             mesh_0.remove_triangles_by_mask(triangles_to_remove)
             mesh = mesh_0
+
+        # global transform (to world coordinate system) before output
+        mesh.transform(self.global_transform)
 
         # write the mesh to ply file
         o3d.io.write_triangle_mesh(mesh_path, mesh)

@@ -67,6 +67,7 @@ class SHINEConfig:
         )
 
         self.semantic_on: bool = False # semantic shine mapping on [semantic]
+        self.sem_class_count: int = 20 # semantic class count: 20 for semantic kitti
 
         # frame-wise downsampling ratio for the merged map point cloud (unit: m)
         self.map_vox_down_m: float = 0.1 
@@ -114,9 +115,14 @@ class SHINEConfig:
         self.occu_update_on: bool = False
 
         # decoder
-        self.mlp_level: int = 2
-        self.mlp_hidden_dim: int = 64
-        self.mlp_bias_on: bool = True
+        self.geo_mlp_level: int = 2
+        self.geo_mlp_hidden_dim: int = 32
+        self.geo_mlp_bias_on: bool = True
+
+        self.sem_mlp_level: int = 2
+        self.sem_mlp_hidden_dim: int = 32
+        self.sem_mlp_bias_on: bool = True
+        
         self.freeze_after_frame: int = 20  # For incremental mode only, if the decoder model is not loaded , it would be trained and freezed after such frame number
 
         # loss
@@ -249,10 +255,10 @@ class SHINEConfig:
         ]  # build the octree from the surface samples or only the measurement points
 
         # decoder
-        self.mlp_level = config_args["decoder"][
+        self.geo_mlp_level = config_args["decoder"][
             "mlp_level"
         ]  # number of the level of the mlp decoder
-        self.mlp_hidden_dim = config_args["decoder"][
+        self.geo_mlp_hidden_dim = config_args["decoder"][
             "mlp_hidden_dim"
         ]  # dimension of the mlp's hidden layer
         # freeze the decoder after runing for x frames (used for incremental mapping to avoid forgeting)

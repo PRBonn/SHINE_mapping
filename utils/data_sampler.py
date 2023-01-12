@@ -127,15 +127,15 @@ class dataSampler():
         return all_sample_points, sdf_label_tensor, normal_label_tensor, sem_label_tensor, \
             weight_tensor, depths_tensor, distances
     
-    
+
+    # space carving sampling (deprecated, to polish)
     def sapce_carving_sample(self, 
                              points_torch, 
                              sensor_origin_torch,
                              space_carving_level,
                              stop_depth_thre,
                              inter_dist_thre):
-        # space carving sampling (deprecated, to polish)
-
+        
         shift_points = points_torch - sensor_origin_torch
         # distances = torch.linalg.norm(shift_points, dim=1, keepdim=True)
         spc = kal.ops.conversions.unbatched_pointcloud_to_spc(shift_points, space_carving_level)

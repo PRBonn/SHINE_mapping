@@ -7,17 +7,19 @@ import copy
 import torch
 from torch.utils.data import Dataset
 import open3d as o3d
+from natsort import natsorted 
 
 from utils.config import SHINEConfig
 from utils.tools import get_time
-from utils.pose import read_calib_file, read_poses_file
+from utils.pose import *
 from utils.data_sampler import dataSampler
 from utils.semantic_kitti_utils import *
+from utils.tracker import Tracker
 from model.feature_octree import FeatureOctree
 
 
 class LiDARDataset(Dataset):
-    def __init__(self, config: SHINEConfig, octree: FeatureOctree) -> None:
+    def __init__(self, config: SHINEConfig, octree: FeatureOctree, tracker: Tracker = None) -> None:
 
         super().__init__()
 
@@ -30,13 +32,20 @@ class LiDARDataset(Dataset):
             self.calib = read_calib_file(config.calib_path)
         else:
             self.calib['Tr'] = np.eye(4)
-        self.poses_w = read_poses_file(config.pose_path, self.calib)
+        if config.pose_path.endswith('txt'):
+            self.poses_w = read_poses_file(config.pose_path, self.calib)
+        elif config.pose_path.endswith('csv'):
+            self.poses_w = csv_odom_to_transforms(config.pose_path)
+        else:
+            sys.exit(
+            "Wrong pose file format. Please use either *.txt (KITTI format) or *.csv (xyz+quat format)"
+            )
 
         # pose in the reference frame (might be the first frame used)
         self.poses_ref = self.poses_w  # initialize size
 
         # point cloud files
-        self.pc_filenames = sorted(os.listdir(config.pc_path))
+        self.pc_filenames = natsorted(os.listdir(config.pc_path)) # sort files as 1, 2,… 9, 10 not 1, 10, 100 with natsort
         self.total_pc_count = len(self.pc_filenames)
 
         dev = config.device
@@ -51,6 +60,11 @@ class LiDARDataset(Dataset):
         # feature octree
         self.octree = octree
 
+        # tracker
+        self.tracker = tracker
+
+        self.last_relative_tran = np.eye(4)
+
         # initialize the data sampler
         self.sampler = dataSampler(config)
         self.ray_sample_count = config.surface_sample_n + config.free_sample_n
@@ -61,9 +75,9 @@ class LiDARDataset(Dataset):
         self.map_bbx = o3d.geometry.AxisAlignedBoundingBox()
 
         # get the pose in the reference frame
+        self.begin_pose_inv = np.eye(4)
         if config.first_frame_ref:
             begin_flag = False
-            begin_pose_inv = np.eye(4)
             for frame_id in range(self.total_pc_count):
                 if (
                     frame_id < config.begin_frame
@@ -73,10 +87,10 @@ class LiDARDataset(Dataset):
                     continue
                 if not begin_flag:  # the first frame used
                     begin_flag = True
-                    begin_pose_inv = inv(self.poses_w[frame_id])  # T_rw
+                    self.begin_pose_inv = inv(self.poses_w[frame_id])  # T_rw
                 # use the first frame as the reference (identity)
                 self.poses_ref[frame_id] = np.matmul(
-                    begin_pose_inv, self.poses_w[frame_id]
+                    self.begin_pose_inv, self.poses_w[frame_id]
                 )
         # or we directly use the world frame as reference
 
@@ -95,8 +109,6 @@ class LiDARDataset(Dataset):
         sor_std = self.config.sor_std
 
         self.cur_pose_ref = self.poses_ref[frame_id]
-        frame_origin = self.cur_pose_ref[:3, 3] * self.config.scale  # translation part
-        frame_origin_torch = torch.tensor(frame_origin, dtype=self.dtype, device=dev)
 
         # load point cloud (support *pcd, *ply and kitti *bin format)
         frame_filename = os.path.join(self.config.pc_path, self.pc_filenames[frame_id])
@@ -143,6 +155,20 @@ class LiDARDataset(Dataset):
             frame_sem_rgb = [sem_kitti_color_map[sem_label] for sem_label in sem_label_list]
             frame_sem_rgb = np.asarray(frame_sem_rgb)/255.0
             frame_pc.colors = o3d.utility.Vector3dVector(frame_sem_rgb)
+
+        # tracking here: only for incremental version
+        # adjust the pose to minimize the accumulated distance of frame_pc's point cloud in current sdf map
+        # just a simple optimization problem
+        # turn on tracking by uncommenting here
+        # if not self.octree.is_empty() and frame_id > 10:
+        #     self.cur_pose_init_guess = self.last_pose_ref
+        #     # self.cur_pose_init_guess = self.last_pose_ref @ self.last_relative_tran 
+        #     self.cur_pose_ref = self.tracker.tracking(frame_pc, self.cur_pose_init_guess) # refine th initial guess
+        #     self.last_relative_tran = self.cur_pose_ref @ inv(self.last_pose_ref)
+        # self.last_pose_ref = self.cur_pose_ref
+        
+        frame_origin = self.cur_pose_ref[:3, 3] * self.config.scale  # translation part
+        frame_origin_torch = torch.tensor(frame_origin, dtype=self.dtype, device=dev)
 
         # transform to reference frame 
         frame_pc = frame_pc.transform(self.cur_pose_ref)
@@ -258,7 +284,7 @@ class LiDARDataset(Dataset):
 
         sem_labels_coarse = (np.asarray(sem_labels_coarse)/255.0).reshape((-1, 1)).repeat(3, axis=1) # label 
 
-        # better to use o3d.t.geometry.PointCloud(device)
+        # TODO: better to use o3d.t.geometry.PointCloud(device)
         # then you can use sdf_map_pc.point['positions'], sdf_map_pc.point['intensities'], sdf_map_pc.point['labels']
         pc_out = o3d.geometry.PointCloud()
         pc_out.points = o3d.utility.Vector3dVector(points)
@@ -300,7 +326,9 @@ class LiDARDataset(Dataset):
         return points, labels
     
     def write_merged_pc(self, out_path):
-        o3d.io.write_point_cloud(out_path, self.map_down_pc) 
+        map_down_pc_out = copy.deepcopy(self.map_down_pc)
+        map_down_pc_out.transform(inv(self.begin_pose_inv)) # back to world coordinate (if taking the first frame as reference)
+        o3d.io.write_point_cloud(out_path, map_down_pc_out) 
         print("save the merged point cloud map to %s\n" % (out_path))    
 
     def __len__(self) -> int:

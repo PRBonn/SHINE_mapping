@@ -34,13 +34,24 @@ def run_shine_mapping_batch():
     # initialize the feature octree
     octree = FeatureOctree(config)
     # initialize the mlp decoder
-    mlp_geo = Decoder(config)
-    mlp_sem = Decoder(config)
+    geo_mlp = Decoder(config, is_geo_encoder=True)
+    sem_mlp = Decoder(config, is_geo_encoder=False)
+
+    # load the decoder model
+    if config.load_model:
+        loaded_model = torch.load(config.model_path)
+        geo_mlp.load_state_dict(loaded_model["geo_decoder"])
+        print("Pretrained decoder loaded")
+        freeze_model(geo_mlp) # fixed the decoder
+        if config.semantic_on:
+            sem_mlp.load_state_dict(loaded_model["sem_decoder"])
+            freeze_model(sem_mlp) # fixed the decoder
 
     # dataset
     dataset = LiDARDataset(config, octree)
 
-    mesher = Mesher(config, octree, mlp_geo, mlp_sem)
+    mesher = Mesher(config, octree, geo_mlp, sem_mlp)
+    mesher.global_transform = inv(dataset.begin_pose_inv)
     
     # for each frame
     print("Load, preprocess and sample data")
@@ -57,8 +68,8 @@ def run_shine_mapping_batch():
 
     # learnable parameters
     octree_feat = list(octree.parameters())
-    mlp_geo_param = list(mlp_geo.parameters())
-    mlp_sem_param = list(mlp_sem.parameters())
+    geo_mlp_param = list(geo_mlp.parameters())
+    sem_mlp_param = list(sem_mlp.parameters())
     # learnable sigma for differentiable rendering
     sigma_size = torch.nn.Parameter(torch.ones(1, device=dev)*1.0) 
     # fixed sigma for sdf prediction supervised with BCE loss
@@ -68,7 +79,7 @@ def run_shine_mapping_batch():
     dataset.write_merged_pc(pc_map_path)
 
     # initialize the optimizer
-    opt = setup_optimizer(config, octree_feat, mlp_geo_param, mlp_sem_param, sigma_size)
+    opt = setup_optimizer(config, octree_feat, geo_mlp_param, sem_mlp_param, sigma_size)
 
     octree.print_detail()
 
@@ -87,18 +98,16 @@ def run_shine_mapping_batch():
         else: # loss computed based on each point sample  
             coord, sdf_label, normal_label, sem_label, weight = dataset.get_batch()
 
-        T1 = get_time()
-                
-        octree.get_indices(coord)
         if config.normal_loss_on or config.ekional_loss_on:
-            coord.requires_grad_()
-            
-        T2 = get_time()
+            coord.requires_grad_(True)
 
-        feature = octree.query_feature(coord) # interpolate and concat the hierachical grid features
-        pred = mlp_geo.sdf(feature) # predict the scaled sdf with the feature
+        T1 = get_time()
+        feature = octree.query_feature(coord) # interpolate and concat the hierachical grid features    
+        T2 = get_time()
+        
+        pred = geo_mlp.sdf(feature) # predict the scaled sdf with the feature
         if config.semantic_on:
-            sem_pred = mlp_sem.sem_label_prob(feature) # TODO: add semantic rendering for ray loss
+            sem_pred = sem_mlp.sem_label_prob(feature) # TODO: add semantic rendering for ray loss
 
         T3 = get_time()
         
@@ -126,14 +135,15 @@ def run_shine_mapping_batch():
         
         # optional loss (ekional, normal loss)
         if config.normal_loss_on or config.ekional_loss_on:
-            g = gradient(coord, pred)*sigma_sigmoid
+            g = get_gradient(coord, pred)*sigma_sigmoid
         eikonal_loss = 0.
         if config.ekional_loss_on:
             eikonal_loss = ((g[surface_mask].norm(2, dim=-1) - 1.0) ** 2).mean() # MSE with regards to 1  
             cur_loss += config.weight_e * eikonal_loss
         normal_loss = 0.
         if config.normal_loss_on:
-            normal_diff = g - normal_label
+            g_direction = g / g.norm(2, dim=-1)
+            normal_diff = g_direction - normal_label
             normal_loss = (normal_diff[surface_mask].abs()).norm(2, dim=1).mean() 
             cur_loss += config.weight_n * normal_loss
 
@@ -141,7 +151,7 @@ def run_shine_mapping_batch():
         sem_loss = 0.
         if config.semantic_on:
             loss_nll = nn.NLLLoss(reduction='mean')
-            sem_label_decimation = 1
+            sem_label_decimation = 1000
             sem_loss = loss_nll(sem_pred[::sem_label_decimation,:], sem_label[::sem_label_decimation])
             cur_loss += config.weight_s * sem_loss
 
@@ -150,7 +160,6 @@ def run_shine_mapping_batch():
         opt.zero_grad(set_to_none=True)
         cur_loss.backward()
         opt.step()
-        octree.set_zero() # set the trashbin feature vector back to 0 after the feature update
 
         T5 = get_time()
 
@@ -171,10 +180,8 @@ def run_shine_mapping_batch():
         # save checkpoint model
         if (((iter+1) % config.save_freq_iters) == 0 and iter > 0):
             checkpoint_name = 'model/model_iter_' + str(iter+1)
-            save_checkpoint(octree, mlp_geo, mlp_sem, opt, run_path, checkpoint_name, iter)
-            save_geo_decoder(mlp_geo, run_path, checkpoint_name) # geo_decoder only
-            if config.semantic_on:
-                save_sem_decoder(mlp_sem, run_path, checkpoint_name)
+            save_checkpoint(octree, geo_mlp, sem_mlp, opt, run_path, checkpoint_name, iter)
+            save_decoder(geo_mlp, sem_mlp, run_path, checkpoint_name) # save both the gro and sem decoders
 
         # reconstruction by marching cubes
         if (((iter+1) % config.vis_freq_iters) == 0 and iter > 0): 

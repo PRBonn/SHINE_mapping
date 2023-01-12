@@ -7,20 +7,30 @@ from utils.config import SHINEConfig
 
 
 class Decoder(nn.Module):
-    def __init__(self, config: SHINEConfig): 
+    def __init__(self, config: SHINEConfig, is_geo_encoder = True): 
         
         super().__init__()
+        
+        if is_geo_encoder:
+            mlp_hidden_dim = config.geo_mlp_hidden_dim
+            mlp_bias_on = config.geo_mlp_bias_on
+            mlp_level = config.geo_mlp_level
+        else:
+            mlp_hidden_dim = config.sem_mlp_hidden_dim
+            mlp_bias_on = config.sem_mlp_bias_on
+            mlp_level = config.sem_mlp_level
+
         # predict sdf (now it anyway only predict sdf without further sigmoid
         # Initializa the structure of shared MLP
         layers = []
-        for i in range(config.mlp_level):
+        for i in range(mlp_level):
             if i == 0:
-                layers.append(nn.Linear(config.feature_dim, config.mlp_hidden_dim, config.mlp_bias_on))
+                layers.append(nn.Linear(config.feature_dim, mlp_hidden_dim, mlp_bias_on))
             else:
-                layers.append(nn.Linear(config.mlp_hidden_dim, config.mlp_hidden_dim, config.mlp_bias_on))
+                layers.append(nn.Linear(mlp_hidden_dim, mlp_hidden_dim, mlp_bias_on))
         self.layers = nn.ModuleList(layers)
-        self.lout = nn.Linear(config.mlp_hidden_dim, 1, config.mlp_bias_on)
-        self.nclass_out = nn.Linear(config.mlp_hidden_dim, 21, config.mlp_bias_on)
+        self.lout = nn.Linear(mlp_hidden_dim, 1, mlp_bias_on)
+        self.nclass_out = nn.Linear(mlp_hidden_dim, config.sem_class_count + 1, mlp_bias_on) # sem class + free space class
         # self.bn = nn.BatchNorm1d(self.hidden_dim, affine=False)
 
         self.to(config.device)

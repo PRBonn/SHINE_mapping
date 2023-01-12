@@ -28,6 +28,7 @@ class FeatureOctree(nn.Module):
         # the number of levels with feature (begin from bottom)
         self.leaf_vox_size = config.leaf_vox_size 
         self.featured_level_num = config.tree_level_feat 
+        self.free_level_num = self.max_level - self.featured_level_num + 1
         self.feature_dim = config.feature_dim
         self.feature_std = config.feature_std
         self.polynomial_interpolation = config.poly_int_on
@@ -46,6 +47,7 @@ class FeatureOctree(nn.Module):
             raise ValueError('No level with grid features!')
         # hierarchical grid features list
         # top-down: leaf node level is stored in the last row (dim feature_level_num-1)
+        # but only for the featured levels
         self.hier_features = nn.ParameterList([]) 
 
         # hierachical feature grid indices for the input batch point
@@ -79,15 +81,17 @@ class FeatureOctree(nn.Module):
         morton_set = set(points_morton.cpu().numpy())
         return sample_points_with_morton, morton_set
 
+    def is_empty(self):
+        return len(self.hier_features) == 0
+
     # update the octree according to new observations
     # if incremental_on = True, then we additional store the last frames' feature for regularization based incremental mapping
     def update(self, surface_points, incremental_on = False):
         # [0 1 2 3 ... max_level-1 max_level]
         spc = kal.ops.conversions.unbatched_pointcloud_to_spc(surface_points, self.max_level) 
         pyramid = spc.pyramids[0].cpu()
-        free_level_num = self.max_level - self.featured_level_num + 1
         for i in range(self.max_level+1): # for each level (top-down)            
-            if i < free_level_num: # free levels (skip), only need to consider the featured levels
+            if i < self.free_level_num: # free levels (skip), only need to consider the featured levels
                 continue
             # level storing features (i>=free_level_num)
             nodes = spc.point_hierarchies[pyramid[1, i]:pyramid[1, i+1]]
@@ -123,11 +127,12 @@ class FeatureOctree(nn.Module):
                 new_feature_num = len(self.corners_lookup_tables[i]) - pre_size
                 new_fts = self.feature_std*torch.randn(new_feature_num+1, self.feature_dim, device=self.device) 
                 new_fts[-1] = torch.zeros(1,self.feature_dim)
-                self.hier_features[i-free_level_num] = nn.Parameter(torch.cat((self.hier_features[i-free_level_num][:-1],new_fts),0))
+                cur_featured_level = i-self.free_level_num
+                self.hier_features[cur_featured_level] = nn.Parameter(torch.cat((self.hier_features[cur_featured_level][:-1],new_fts),0))
                 if incremental_on:
                     new_weights = torch.zeros(new_feature_num+1, self.feature_dim, device=self.device)
-                    self.importance_weight[i-free_level_num] = torch.cat((self.importance_weight[i-free_level_num][:-1],new_weights),0)
-                    self.features_last_frame[i-free_level_num] = (self.hier_features[i-free_level_num].clone())
+                    self.importance_weight[cur_featured_level] = torch.cat((self.importance_weight[cur_featured_level][:-1],new_weights),0)
+                    self.features_last_frame[cur_featured_level] = (self.hier_features[cur_featured_level].clone())
 
             corners_m = kal.ops.spc.points_to_morton(corners).cpu().numpy().tolist()
             indexes = torch.tensor([self.corners_lookup_tables[i][x] for x in corners_m]).reshape(-1,8).numpy().tolist()
@@ -164,11 +169,11 @@ class FeatureOctree(nn.Module):
 
     # get the unique indices of the feature node at spatial points x for each level
     # TODO: speed up !!!
-    def get_indices(self, x):
+    def get_indices(self, coord):
         self.hierarchical_indices = [] # initialize the hierarchical indices list for the batch points x
         for i in range(self.featured_level_num): # bottom-up, for each level
             current_level = self.max_level - i
-            points = kal.ops.spc.quantize_points(x,current_level) # quantize to interger coords
+            points = kal.ops.spc.quantize_points(coord,current_level) # quantize to interger coords
             points_morton = kal.ops.spc.points_to_morton(points).cpu().numpy().tolist() # convert to 1d morton code for the voxel center
             features_last_row = [-1 for t in range(8)] # if not in the look up table, then assign all -1
             # look up the 8 corner nodes' unique indices for each 1d morton code in the look up table [nx8], the most time-consuming part 
@@ -178,7 +183,41 @@ class FeatureOctree(nn.Module):
             # which is the all-zero trashbin vector of the level's feature
             indices_torch = torch.tensor(indices_list, device=self.device) 
             self.hierarchical_indices.append(indices_torch) # l level {nx8}  # bottom-up
+        
+        return self.hierarchical_indices
+
+    # get the hierachical-sumed interpolated feature at spatial points x
+    def query_feature_with_indices(self, coord, hierarchical_indices):
+        sum_features = torch.zeros(coord.shape[0], self.feature_dim, device=self.device)
+        for i in range(self.featured_level_num): # for each level
+            current_level = self.max_level - i
+            feature_level = self.featured_level_num-i-1
+            # Interpolating
+            # get the interpolation coefficients for the 8 neighboring corners, corresponding to the order of the hierarchical_indices
+            coeffs = self.interpolat(coord,current_level,self.polynomial_interpolation) 
+            sum_features += (self.hier_features[feature_level][hierarchical_indices[i]]*coeffs).sum(1) 
+            # corner index -1 means the queried voxel is not in the leaf node. If so, we will get the trashbin row of the feature grid, 
+            # and get the value 0, the feature for this level will then be 0
+        return sum_features
+
+    # all-in-one function to get the octree features for a batch of points
+    def query_feature(self, coord):
+        self.set_zero() # set the trashbin feature vector back to 0 after the feature update
+        indices = self.get_indices(coord)
+        features = self.query_feature_with_indices(coord, indices)
+        return features
     
+    def cal_regularization(self):
+        regularization = 0.
+        for i in range(self.featured_level_num): # for each level
+            feature_level = self.featured_level_num-i-1
+            unique_indices = self.hierarchical_indices[i].flatten().unique()
+            # feature change between current and last frame
+            difference = self.hier_features[feature_level][unique_indices] - self.features_last_frame[feature_level][unique_indices] 
+            # regularization for continous learning weighted by the feature importance and the change magnitude    
+            regularization += (self.importance_weight[feature_level][unique_indices]*(difference**2)).sum()
+        return regularization
+
     def list_duplicates(self, seq):
         tally = defaultdict(list)
         for i,item in enumerate(seq):
@@ -188,11 +227,11 @@ class FeatureOctree(nn.Module):
     # speed up for the batch sdf inferencing during meshing
     # points in the same voxel would be grouped and getting indices together
     # This function contains some problem which would make the mesh worse, check it later (TODO: BUGS)
-    def get_indices_fast(self, x):
+    def get_indices_fast(self, coord):
         self.hierarchical_indices = []
         for i in range(self.featured_level_num): # bottom-up
             current_level = self.max_level - i
-            points = kal.ops.spc.quantize_points(x,current_level) # quantize to interger coords
+            points = kal.ops.spc.quantize_points(coord,current_level) # quantize to interger coords
             points_morton = kal.ops.spc.points_to_morton(points).cpu().numpy().tolist() # convert to 1d morton code for the voxel center
             features_last_row = [-1 for t in range(8)] # if not in the look up table, then assign -1
 
@@ -205,31 +244,8 @@ class FeatureOctree(nn.Module):
                 dups_indices[idx,:] = self.nodes_lookup_tables[current_level].get(p,features_last_row)
             indices = torch.tensor(dups_indices, device=self.device).long()
             self.hierarchical_indices.append(indices) # l level {nx8} 
-
-    # get the hierachical-sumed interpolated feature at spatial points x
-    def query_feature(self, x):
-        sum_features = torch.zeros(x.shape[0], self.feature_dim, device=self.device)
-        for i in range(self.featured_level_num): # for each level
-            current_level = self.max_level - i
-            feature_level = self.featured_level_num-i-1
-            # Interpolating
-            # get the interpolation coefficients for the 8 neighboring corners, corresponding to the order of the hierarchical_indices
-            coeffs = self.interpolat(x,current_level,self.polynomial_interpolation) 
-            sum_features += (self.hier_features[feature_level][self.hierarchical_indices[i]]*coeffs).sum(1) 
-            # corner index -1 means the queried voxel is not in the leaf node. If so, we will get the trashbin row of the feature grid, 
-            # and get the value 0, the feature for this level will then be 0
-        return sum_features
-    
-    def cal_regularization(self):
-        regularization = 0.
-        for i in range(self.featured_level_num): # for each level
-            feature_level = self.featured_level_num-i-1
-            unique_indices = self.hierarchical_indices[i].flatten().unique()
-            # feature change between current and last frame
-            difference = self.hier_features[feature_level][unique_indices] - self.features_last_frame[feature_level][unique_indices] 
-            # regularization for continous learning weighted by the feature importance and the change magnitude    
-            regularization += (self.importance_weight[feature_level][unique_indices]*(difference**2)).sum()
-        return regularization
+        
+        return self.hierarchical_indices
 
     def print_detail(self):
         print("Current Octomap:")
