@@ -207,9 +207,12 @@ class FeatureOctree(nn.Module):
         return sum_features
 
     # all-in-one function to get the octree features for a batch of points
-    def query_feature(self, coord):
+    def query_feature(self, coord, faster = False):
         self.set_zero() # set the trashbin feature vector back to 0 after the feature update
-        indices = self.get_indices(coord)
+        if faster:
+            indices = self.get_indices_fast(coord)
+        else:
+            indices = self.get_indices(coord)
         features = self.query_feature_with_indices(coord, indices)
         return features
     
@@ -225,14 +228,15 @@ class FeatureOctree(nn.Module):
         return regularization
 
     def list_duplicates(self, seq):
-        tally = defaultdict(list)
+        dd = defaultdict(list)
         for i,item in enumerate(seq):
-            tally[item].append(i)
-        return [(key,locs) for key,locs in tally.items() if len(locs)>1]
+            dd[item].append(i)
+        return [(key,locs) for key,locs in dd.items() if len(locs)>=1] 
                                 
     # speed up for the batch sdf inferencing during meshing
     # points in the same voxel would be grouped and getting indices together
-    # This function contains some problem which would make the mesh worse, check it later (TODO: BUGS)
+    # more efficient only when there are lots of samples from the same voxel in the batch (the case when conducting meshing)
+    # This function contains some problem which would make the mesh worse, check it later (solved)
     def get_indices_fast(self, coord):
         self.hierarchical_indices = []
         for i in range(self.featured_level_num): # bottom-up
@@ -243,11 +247,12 @@ class FeatureOctree(nn.Module):
 
             dups_in_mortons = dict(self.list_duplicates(points_morton)) # list the x with the same morton code (samples inside the same voxel)
             dups_indices = np.zeros((len(points_morton), 8))
+            # print(len(dups_in_mortons.keys()), len(points_morton))
             for p in dups_in_mortons.keys():
-                idx = dups_in_mortons[p]
+                idx = dups_in_mortons[p] # indices, p is the point morton
                 # get indices only once for these samples sharing the same voxel 
-                # dups_indices[idx,:] = np.int_(self.nodes_lookup_tables[current_level].get(p,features_last_row)) 
-                dups_indices[idx,:] = self.nodes_lookup_tables[current_level].get(p,features_last_row)
+                corner_indices = self.nodes_lookup_tables[current_level].get(p,features_last_row)
+                dups_indices[idx,:] = corner_indices
             indices = torch.tensor(dups_indices, device=self.device).long()
             self.hierarchical_indices.append(indices) # l level {nx8} 
         

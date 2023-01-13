@@ -15,7 +15,6 @@ from utils.loss import *
 from utils.incre_learning import cal_feature_importance
 from utils.mesher import Mesher
 from utils.visualizer import MapVisualizer
-from utils.tracker import Tracker
 from model.feature_octree import FeatureOctree
 from model.decoder import Decoder
 from dataset.lidar_dataset import LiDARDataset
@@ -52,10 +51,7 @@ def run_shine_mapping_incremental():
             octree = loaded_model["feature_octree"]
             octree.print_detail()
 
-    # tracker
-    # tracker = Tracker(config, octree, geo_mlp, sem_mlp)
-
-    # dataset, track pose here
+    # dataset
     dataset = LiDARDataset(config, octree)
 
     # mesh reconstructor

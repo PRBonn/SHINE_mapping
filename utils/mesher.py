@@ -65,7 +65,7 @@ class Mesher():
                 batch_coord = coord[head:tail, :]
                 if self.cur_device == "cpu" and self.device == "cuda":
                     batch_coord = batch_coord.cuda()
-                batch_feature = self.octree.query_feature(batch_coord) # query features
+                batch_feature = self.octree.query_feature(batch_coord, True) # query features
                 if query_sdf:
                     batch_sdf = -self.geo_decoder.sdf(batch_feature)
                     sdf_pred[head:tail] = batch_sdf.detach().cpu().numpy()
@@ -83,7 +83,7 @@ class Mesher():
                     mask_mc = torch.all(mask_mc, dim=1)
                     mc_mask[head:tail] = mask_mc.detach().cpu().numpy()
                     # but for scimage's marching cubes, the top right corner's mask should also be true to conduct marching cubes
-                    
+
         return sdf_pred, sem_pred, mc_mask
 
     def get_query_from_bbx(self, bbx, voxel_size):
