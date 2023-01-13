@@ -338,6 +338,8 @@ class LiDARDataset(Dataset):
             return self.sdf_label_pool.shape[0]  # point sample count
 
     # NOTE: avoid using data loader to load data that are already in gpu
+    # But for really large-scale dataset (>1000 frames), and your gpu memory is not big enough, 
+    # It's better to sill use this
     # deprecated
     def __getitem__(self, index: int):
         # use ray sample (each sample containing all the sample points on the ray)
