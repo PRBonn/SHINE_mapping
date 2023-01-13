@@ -263,6 +263,12 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
   <img src="https://user-images.githubusercontent.com/34207278/207911217-c27a52c9-7233-4db9-a1fd-3487e59e6529.png" width="70%" />
 </p>
 
+**Apollo**
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/34207278/212333973-ad1a0c14-550f-4266-902f-08c33f9f79c1.png" width="70%" />
+</p>
+
 
 </details>
 
@@ -292,6 +298,8 @@ As mentioned in the paper, we also compute a fairer accuracy metric using the gr
 2. The feature octree is built mainly according to `leaf_vox_size`, `tree_level_world` and `tree_level_feat`. `leaf_vox_size` represents the size of the leaf voxel size in meter. `tree_level_world` and `tree_level_feat` represent the total tree level and the tree levels with latent feature codes, respectively. `tree_level_world` should be large enough to gurantee all the map data lies inside the cube with the size `leaf_vox_size**(tree_level_world+1)`.
 
 3. SHINE Mapping supports both the offline batch mapping and the incremental sequential mapping. For incremental mapping, one can either load a fixed pre-trained decoder from the batching mapping on a similar dataset (set `load_model: True`) or train the decoder for `freeze_after_frame` frames on-the-fly and then freeze it afterwards (set `load_model: False`). The first option would lead to better mapping performance.
+
+4. You can use the `mc_vis_level` parameter to have a trade-off between the scene completion and the exact measurement accuracy. This parameter indicate at which level of the octree the marching cubes reconstruction would be conducted. The larger the value of `mc_vis_level` (but not larger than `tree_level_feat`), the more scene completion ability you would gain. And with the small value, SHINE mapping would only reconstruct the part with actual measurements without filling the holes. 
 
 </details>
 
