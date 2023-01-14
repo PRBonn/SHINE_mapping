@@ -1,9 +1,9 @@
 setting:
   name: "maicity_batch"
   output_root: "./experiments/"
-  pc_path: "xxx/data/mai_city/ply/sequences/01/velodyne"
-  pose_path: "xxx/data/mai_city/ply/sequences/01/poses.txt"
-  calib_path: "xxx/data/mai_city/ply/sequences/01/calib.txt"
+  pc_path: "./data/mai_city/ply/sequences/01/velodyne"
+  pose_path: "./data/mai_city/ply/sequences/01/poses.txt"
+  calib_path: "./data/mai_city/ply/sequences/01/calib.txt"
   load_model: False
   model_path: "" 
   first_frame_ref: False

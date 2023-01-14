@@ -1,9 +1,9 @@
 setting:
   name: "kitti_incre_reg"
   output_root: "./experiments/"
-  pc_path: "xxx/data/kitti/sequences/00/velodyne"
-  pose_path: "xxx/data/kitti/sequences/00/poses.txt"
-  calib_path: "xxx/data/kitti/sequences/00/calib.txt"
+  pc_path: "./data/kitti/sequences/07/velodyne"
+  pose_path: "./data/kitti/sequences/07/poses.txt"
+  calib_path: "./data/kitti/sequences/07/calib.txt"
   load_model: False
   model_path: "" 
   first_frame_ref: False

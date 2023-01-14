@@ -1,9 +1,9 @@
 setting:
   name: "ncd_batch"
   output_root: "./experiments/"
-  pc_path: "xxx/data/ncd_example/quad/pcd"
-  pose_path: "xxx/data/ncd_example/quad/poses.txt"
-  calib_path: "xxx/data/ncd_example/quad/calib.txt"
+  pc_path: "./data/ncd_example/quad/pcd"
+  pose_path: "./data/ncd_example/quad/poses.txt"
+  calib_path: "./data/ncd_example/quad/calib.txt"
   load_model: False
   model_path: "" 
   first_frame_ref: False
@@ -11,7 +11,7 @@ setting:
   end_frame: 1300
   every_frame: 5 # 1 means does not skip
   device: "cuda"
-  gpu_id: "0"
+  gpu_id: "1"
 process:
   min_range_m: 1.5
   pc_radius_m: 40.0  # distance filter for each frame
