@@ -76,6 +76,7 @@ class Mesher():
                     # get the marching cubes mask
                     # hierarchical_indices: bottom-up
                     check_level_indices = self.octree.hierarchical_indices[check_level] 
+                    # print(check_level_indices)
                     # if index is -1 for the level, then means the point is not valid under this level
                     mask_mc = check_level_indices >= 0
                     # print(mask_mc.shape)
@@ -172,7 +173,7 @@ class Mesher():
 
         if mc_mask is not None:
             mc_mask = mc_mask.reshape(voxel_num_xyz[0], voxel_num_xyz[1], voxel_num_xyz[2]).astype(dtype=bool)
-            mc_mask[:,:,0:1] = True # TODO: dirty fix for the ground issue 
+            # mc_mask[:,:,0:1] = True # TODO: dirty fix for the ground issue 
 
         return sdf_pred, sem_pred, mc_mask
 
@@ -192,7 +193,7 @@ class Mesher():
         verts, faces, normals, values = np.zeros((0, 3)), np.zeros((0, 3)), np.zeros((0, 3)), np.zeros(0)
         try:       
             verts, faces, normals, values = skimage.measure.marching_cubes(
-                mc_sdf, level=0.0, allow_degenerate=True, mask=mc_mask)
+                mc_sdf, level=0.0, allow_degenerate=False, mask=mc_mask)
         except:
             pass
 
@@ -257,3 +258,5 @@ class Mesher():
         # write the mesh to ply file
         o3d.io.write_triangle_mesh(mesh_path, mesh)
         print("save the mesh to %s\n" % (mesh_path))
+
+        return mesh

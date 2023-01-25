@@ -13,6 +13,7 @@ from utils.config import SHINEConfig
 from utils.tools import *
 from utils.loss import *
 from utils.mesher import Mesher
+from utils.visualizer import MapVisualizer, random_color_table
 from model.feature_octree import FeatureOctree
 from model.decoder import Decoder
 from dataset.lidar_dataset import LiDARDataset
@@ -55,6 +56,10 @@ def run_shine_mapping_batch():
 
     mesher = Mesher(config, octree, geo_mlp, sem_mlp)
     mesher.global_transform = inv(dataset.begin_pose_inv)
+
+    # Visualizer on
+    if config.o3d_vis_on:
+        vis = MapVisualizer()
     
     # for each frame
     print("Load, preprocess and sample data")
@@ -192,8 +197,14 @@ def run_shine_mapping_batch():
             print("Begin mesh reconstruction from the implicit map")               
             mesh_path = run_path + '/mesh/mesh_iter_' + str(iter+1) + ".ply"
             map_path = run_path + '/map/sdf_map_iter_' + str(iter+1) + ".ply"
-            mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.semantic_on)
+            cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.semantic_on)
+            
+            if config.o3d_vis_on:
+                cur_mesh.transform(dataset.begin_pose_inv)
+                vis.update_mesh(cur_mesh)
 
-    
+    if config.o3d_vis_on:
+        vis.stop()
+
 if __name__ == "__main__":
     run_shine_mapping_batch()

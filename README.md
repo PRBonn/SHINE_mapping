@@ -299,7 +299,9 @@ As mentioned in the paper, we also compute a fairer accuracy metric using the gr
 
 3. SHINE Mapping supports both the offline batch mapping and the incremental sequential mapping. For incremental mapping, one can either load a fixed pre-trained decoder from the batching mapping on a similar dataset (set `load_model: True`) or train the decoder for `freeze_after_frame` frames on-the-fly and then freeze it afterwards (set `load_model: False`). The first option would lead to better mapping performance.
 
-4. You can use the `mc_vis_level` parameter to have a trade-off between the scene completion and the exact measurement accuracy. This parameter indicate at which level of the octree the marching cubes reconstruction would be conducted. The larger the value of `mc_vis_level` (but not larger than `tree_level_feat`), the more scene completion ability you would gain. And with the small value, SHINE mapping would only reconstruct the part with actual measurements without filling the holes. 
+4. You can use the `mc_vis_level` parameter to have a trade-off between the scene completion and the exact measurement accuracy. This parameter indicate at which level of the octree the marching cubes reconstruction would be conducted. The larger the value of `mc_vis_level` (but not larger than `tree_level_feat`), the more scene completion ability you would gain (but also some artifacts such as a double wall may appear). And with the small value, SHINE mapping would only reconstruct the part with actual measurements without filling the holes. The safest way to avoid the holes on the ground is to set `mc_mask_on: False` to disable the masking for marching cubes.
+
+5. The incremental mapping with regularization strategy (setting `continual_learning_reg: True`) can achieve incremental neural mapping without storing a ever-growing data pool which would be a burden for the memory. The coefficient `lambda_forget` needs to be fine-tuned under different feature octree and point sampling settings. The recommended value is between `1e5` to `1e8`. A pre-trained decoder is also recommended to be loaded during incremental mapping with regularization for better performance.
 
 </details>
 
@@ -308,11 +310,11 @@ As mentioned in the paper, we also compute a fairer accuracy metric using the gr
 ## Citation
 If you use SHINE Mapping for any academic work, please cite our original paper.
 ```
-@article{zhong2022arxiv,
+@inproceedings{zhong2023icra,
   title={SHINE-Mapping: Large-Scale 3D Mapping Using Sparse Hierarchical Implicit NEural Representations},
   author={Zhong, Xingguang and Pan, Yue and Behley, Jens and Stachniss, Cyrill},
-  journal={arXiv preprint arXiv:2210.02299},
-  year={2022}
+  booktitle = {Proceedings of the IEEE International Conference on Robotics and Automation (ICRA)},
+  year={2023}
 }
 ```
 

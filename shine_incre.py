@@ -14,7 +14,7 @@ from utils.tools import *
 from utils.loss import *
 from utils.incre_learning import cal_feature_importance
 from utils.mesher import Mesher
-from utils.visualizer import MapVisualizer
+from utils.visualizer import MapVisualizer, random_color_table
 from model.feature_octree import FeatureOctree
 from model.decoder import Decoder
 from dataset.lidar_dataset import LiDARDataset
@@ -59,7 +59,8 @@ def run_shine_mapping_incremental():
     mesher.global_transform = inv(dataset.begin_pose_inv)
 
     # Non-blocking visualizer
-    vis = MapVisualizer()
+    if config.o3d_vis_on:
+        vis = MapVisualizer()
 
     # learnable parameters
     geo_mlp_param = list(geo_mlp.parameters())
@@ -166,22 +167,39 @@ def run_shine_mapping_incremental():
             # print("Begin reconstruction from implicit mapn")               
             mesh_path = run_path + '/mesh/mesh_frame_' + str(frame_id+1) + ".ply"
             map_path = run_path + '/map/sdf_map_frame_' + str(frame_id+1) + ".ply"
-            mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.semantic_on)
+            cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.semantic_on)
 
         T3 = get_time()
 
-        if vis_mesh: 
-            cur_mesh = o3d.io.read_triangle_mesh(mesh_path)
-            cur_mesh.compute_vertex_normals()
-            vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref, cur_mesh)
-        else: # only show frame and current point cloud
-            vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref)
+        if config.o3d_vis_on:
+            if vis_mesh: 
+                cur_mesh.transform(dataset.begin_pose_inv) # back to the globally shifted frame for vis
+                vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref, cur_mesh)
+            else: # only show frame and current point cloud
+                vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref)
+
+            # visualize the octree
+            # if vis_mesh: 
+            #     cur_mesh.transform(dataset.begin_pose_inv)
+            #     vis_list = [] # create a list of bbx for the octree nodes
+            #     for l in range(config.tree_level_feat):
+            #         nodes_coord = octree.get_octree_nodes(config.tree_level_world-l)/config.scale
+            #         box_size = np.ones(3) * config.leaf_vox_size * (2**l)
+            #         for node_coord in nodes_coord:
+            #             node_box = o3d.geometry.AxisAlignedBoundingBox(node_coord-0.5*box_size, node_coord+0.5*box_size)
+            #             node_box.color = random_color_table[l]
+            #             vis_list.append(node_box)
+            #     vis_list.append(cur_mesh)
+            #     o3d.visualization.draw_geometries(vis_list)
 
         if config.wandb_vis_on:
             wandb_log_content = {'frame': processed_frame, 'timing(s)/preprocess': T1-T0, 'timing(s)/mapping': T2-T1, 'timing(s)/reconstruct': T3-T2} 
             wandb.log(wandb_log_content)
 
         processed_frame += 1
+    
+    if config.o3d_vis_on:
+        vis.stop()
 
 if __name__ == "__main__":
     run_shine_mapping_incremental()

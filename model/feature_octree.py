@@ -60,8 +60,6 @@ class FeatureOctree(nn.Module):
         self.features_last_frame = [] # hierarchical features for the last frame
 
         self.to(config.device)
-    
-    # def get_octree(self, level):
 
     # the last element of the each level of the hier_features is the trashbin element
     # after the optimization, we need to set it back to zero vector
@@ -81,10 +79,19 @@ class FeatureOctree(nn.Module):
         morton_set = set(points_morton.cpu().numpy())
         return sample_points_with_morton, morton_set
 
+    def get_octree_nodes(self, level): # top-down
+        nodes_morton = list(self.nodes_lookup_tables[level].keys())
+        nodes_morton = torch.tensor(nodes_morton).to(self.device, torch.int64)
+        nodes_spc = kal.ops.spc.morton_to_points(nodes_morton)
+        nodes_spc_np = nodes_spc.cpu().numpy()
+        node_size = 2**(1-level) # in the -1 to 1 kaolin space
+        nodes_coord_scaled = (nodes_spc_np * node_size) - 1. + 0.5 * node_size  # in the -1 to 1 kaolin space
+        return nodes_coord_scaled
+
     def is_empty(self):
         return len(self.hier_features) == 0
 
-    # clear the temp data that is not needed
+    # clear the temp data (used for one batch) that is not needed
     def clear_temp(self):
         self.hierarchical_indices = [] 
         self.importance_weight = []
@@ -145,6 +152,9 @@ class FeatureOctree(nn.Module):
             new_nodes_morton = kal.ops.spc.points_to_morton(new_nodes).cpu().numpy().tolist()
             for k in range(len(new_nodes_morton)):
                 self.nodes_lookup_tables[i][new_nodes_morton[k]] = indexes[k]
+
+        # nodes_coord = self.get_octree_nodes(self.max_level)
+        # print(nodes_coord)
         
     # tri-linear (or polynomial) interplation of feature at certain octree level at certain spatial point x 
     def interpolat(self, x, level, polynomial_on = True):
@@ -264,7 +274,7 @@ class FeatureOctree(nn.Module):
         for level in range(self.featured_level_num):
             level_vox_size = self.leaf_vox_size*(2**(self.featured_level_num-1-level))
             level_vox_count = self.hier_features[level].shape[0]
-            print("%.2f m: %d vox" %(level_vox_size, level_vox_count))
+            print("%.2f m: %d voxel corners" %(level_vox_size, level_vox_count))
             total_vox_count += level_vox_count
         total_map_memory = total_vox_count * self.feature_dim * 4 / 1024 / 1024 # unit: MB
         print("memory: %d x %d x 4 = %.3f MB" %(total_vox_count, self.feature_dim, total_map_memory)) 

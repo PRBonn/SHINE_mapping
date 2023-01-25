@@ -57,5 +57,6 @@ eval:
   save_freq_iters: 10000 # save the model and octree every x iterations
   mesh_freq_frame: 1
   mc_res_m: 0.1 # reconstruction marching cubes resolution
+  mc_mask_on: True
   mc_vis_level: 1
   save_map: False # save the sdf map or not 

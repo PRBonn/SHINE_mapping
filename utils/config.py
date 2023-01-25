@@ -32,6 +32,9 @@ class SHINEConfig:
         self.gpu_id: str = "0"  # used GPU id
         self.dtype = torch.float32 # default torch tensor data type
 
+        # just a ramdom number for the global shift of the input on z axis (used to avoid octree boundary marching cubes issues)
+        self.global_shift_default: float = 0.17241 
+
         # baseline
         # self.run_baseline = False
         # # select from vdb_fusion, voxblox_simple, voxblox_merged, voxblox_fast
@@ -164,6 +167,7 @@ class SHINEConfig:
 
         # eval
         self.wandb_vis_on: bool = False
+        self.o3d_vis_on: bool = True # visualize the mesh in-the-fly using o3d visualzier or not [press space to pasue/resume]
         self.eval_on: bool = False
         self.eval_outlier_thre = 0.5  # unit:m
         self.eval_freq_iters: int = 100
@@ -175,7 +179,7 @@ class SHINEConfig:
         self.mc_res_m: float = 0.1
         self.pad_voxel: int = 0
         self.mc_vis_level: int = 1
-        self.mc_mask_on: bool = True # use mask for marching cubes to avoid the artifacts
+        self.mc_mask_on: bool = False # use mask for marching cubes to avoid the artifacts
         
         self.infer_bs: int = 4096
         self.occ_binary_mc: bool = False
@@ -207,7 +211,7 @@ class SHINEConfig:
         self.begin_frame = config_args["setting"]["begin_frame"]
         self.end_frame = config_args["setting"]["end_frame"]
         self.every_frame = config_args["setting"]["every_frame"]
-        
+
         self.device = config_args["setting"]["device"]
         self.gpu_id = config_args["setting"]["gpu_id"]
 
@@ -347,6 +351,8 @@ class SHINEConfig:
         self.mc_vis_level = config_args["eval"][
             "mc_vis_level"
         ]
+        # using masked marching cubes according to the octree or not
+        self.mc_mask_on = config_args["eval"]["mc_mask_on"]
         self.save_map = config_args["eval"][
             "save_map"
         ] 

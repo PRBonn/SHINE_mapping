@@ -76,22 +76,25 @@ class LiDARDataset(Dataset):
 
         # get the pose in the reference frame
         self.begin_pose_inv = np.eye(4)
-        if config.first_frame_ref:
-            begin_flag = False
-            for frame_id in range(self.total_pc_count):
-                if (
-                    frame_id < config.begin_frame
-                    or frame_id > config.end_frame
-                    or frame_id % config.every_frame != 0
-                ):
-                    continue
-                if not begin_flag:  # the first frame used
-                    begin_flag = True
+        begin_flag = False
+        for frame_id in range(self.total_pc_count):
+            if (
+                frame_id < config.begin_frame
+                or frame_id > config.end_frame
+                or frame_id % config.every_frame != 0
+            ):
+                continue
+            if not begin_flag:  # the first frame used
+                begin_flag = True
+                if config.first_frame_ref:
                     self.begin_pose_inv = inv(self.poses_w[frame_id])  # T_rw
-                # use the first frame as the reference (identity)
-                self.poses_ref[frame_id] = np.matmul(
-                    self.begin_pose_inv, self.poses_w[frame_id]
-                )
+                else:
+                    # just a random number to avoid octree boudnary marching cubes problems on synthetic dataset such as MaiCity(TO FIX)
+                    self.begin_pose_inv[2,3] += config.global_shift_default 
+            # use the first frame as the reference (identity)
+            self.poses_ref[frame_id] = np.matmul(
+                self.begin_pose_inv, self.poses_w[frame_id]
+            )
         # or we directly use the world frame as reference
 
     def process_frame(self, frame_id, incremental_on = False):

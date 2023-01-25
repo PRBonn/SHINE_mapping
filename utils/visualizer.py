@@ -1,6 +1,5 @@
 # Partially borrowed from Nacho's lidar odometry (KISS-ICP)
 
-from abc import ABC
 import copy
 from functools import partial
 import os
@@ -14,26 +13,29 @@ RED = np.array([128, 0, 0]) / 255.0
 BLACK = np.array([0, 0, 0]) / 255.0
 GOLDEN = np.array([1.0, 0.843, 0.0])
 
+random_color_table = [[230. / 255., 0., 0.],  # red
+                    [60. / 255., 180. / 255., 75. / 255.],  # green
+                    [0., 0., 255. / 255.],  # blue
+                    [255. / 255., 0, 255. / 255.],
+                    [255. / 255., 165. / 255., 0.],
+                    [128. / 255., 0, 128. / 255.],
+                    [0., 255. / 255., 255. / 255.],
+                    [210. / 255., 245. / 255., 60. / 255.],
+                    [250. / 255., 190. / 255., 190. / 255.],
+                    [0., 128. / 255., 128. / 255.]
+                    ]
 
-class StubVisualizer(ABC):
-    def __init__(self):
-        pass
-
-    def update(self, frame, target, pose):
-        pass
-
-
-class MapVisualizer(StubVisualizer):
+class MapVisualizer():
     # Public Interaface ----------------------------------------------------------------------------
     def __init__(self):
         # Initialize GUI controls
         self.block_vis = True
-        self.play_crun = False
+        self.play_crun = True
         self.reset_bounding_box = True
 
         # Create data
         self.scan = o3d.geometry.PointCloud()
-        self.frame_axis_len = 0.8
+        self.frame_axis_len = 0.6
         self.frame = o3d.geometry.TriangleMesh()
         self.mesh = o3d.geometry.TriangleMesh()
 
@@ -50,25 +52,38 @@ class MapVisualizer(StubVisualizer):
         self.view_control = self.vis.get_view_control()
         self.camera_params = self.view_control.convert_to_pinhole_camera_parameters()
 
-    def update(self, scan, pose, mesh = None):
-        self._update_geometries(scan, pose, mesh)
+        # self.global_transform = np.eye(4)
+
+    def update_view(self):
+        self.vis.poll_events()
+        self.vis.update_renderer()
+
+    def pause_view(self):
         while self.block_vis:
-            self.vis.poll_events()
-            self.vis.update_renderer()
+            self.update_view()
             if self.play_crun:
                 break
-        self.block_vis = not self.block_vis
+
+    def update(self, scan, pose, mesh = None):
+        self._update_geometries(scan, pose, mesh)
+        self.update_view()
+        self.pause_view()
+
+    def update_mesh(self, mesh):
+        self._update_mesh(mesh)
+        self.update_view()
+        self.pause_view()
     
     def destroy_window(self):
         self.vis.destroy_window()
     
     def stop(self):
-        self.block_vis = True
+        self.play_crun = not self.play_crun
         while self.block_vis:
             self.vis.poll_events()
             self.vis.update_renderer()
-            # if self.play_crun:
-            #     break
+            if self.play_crun:
+                break
 
     # Private Interaface ---------------------------------------------------------------------------
     def _initialize_visualizer(self):
@@ -78,7 +93,7 @@ class MapVisualizer(StubVisualizer):
         self.vis.add_geometry(self.frame)
         self.vis.add_geometry(self.mesh)
         self._set_white_background(self.vis)
-        self.vis.get_render_option().point_size = 2
+        self.vis.get_render_option().point_size = 3
         self.vis.get_render_option().light_on = True
         print(100 * "*")
         print(f"{w_name} initialized. Press [SPACE] to pause/start, [N] to step, [ESC] to exit.")
@@ -88,7 +103,7 @@ class MapVisualizer(StubVisualizer):
             self.vis.register_key_callback(ord(str(key)), partial(callback))
 
     def _register_key_callbacks(self):
-        self._register_key_callback(["Ā", "Q", "\x1b"], self._quit)
+        self._register_key_callback(["Q", "\x1b"], self._quit)
         self._register_key_callback([" "], self._start_stop)
         self._register_key_callback(["V"], self._toggle_view)
         self._register_key_callback(["F"], self._toggle_frame)
@@ -121,6 +136,12 @@ class MapVisualizer(StubVisualizer):
         self.render_map = not self.render_map
         return False
     
+    def _update_mesh(self, mesh):
+        if mesh is not None:
+            self.vis.remove_geometry(self.mesh, self.reset_bounding_box)
+            self.mesh = mesh
+            self.vis.add_geometry(self.mesh, self.reset_bounding_box)
+
     def _update_geometries(self, scan, pose, mesh = None):
         # Scan (toggled by "F")
         if self.render_frame:
@@ -132,8 +153,9 @@ class MapVisualizer(StubVisualizer):
         # Always visualize the coordinate frame
         self.frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=self.frame_axis_len, origin=np.zeros(3))
         self.frame = self.frame.transform(pose)
-    
+        
         # Mesh Map (toggled by "M")
+        # mesh already got global shifted
         if self.render_map:
             if mesh is not None:
                 self.vis.remove_geometry(self.mesh, self.reset_bounding_box)  # if comment, then we keep the previous reconstructed mesh (for the case we use local map reconstruction) 
