@@ -114,6 +114,7 @@ def run_shine_mapping_incremental():
                 sem_pred = sem_mlp.sem_label_prob(feature)
 
             # calculate the loss
+            surface_mask = weight > 0
             cur_loss = 0.
             weight = torch.abs(weight) # weight's sign indicate the sample is around the surface or in the free space
             sdf_loss = sdf_bce_loss(sdf_pred, sdf_label, sigma_sigmoid, weight, config.loss_weight_on, config.loss_reduction) 
@@ -128,7 +129,6 @@ def run_shine_mapping_incremental():
             # optional ekional loss
             eikonal_loss = 0.
             if config.ekional_loss_on:
-                surface_mask = weight > 0
                 g = get_gradient(coord, sdf_pred)*sigma_sigmoid
                 eikonal_loss = ((g[surface_mask].norm(2, dim=-1) - 1.0) ** 2).mean() # MSE with regards to 1  
                 cur_loss += config.weight_e * eikonal_loss
@@ -137,8 +137,7 @@ def run_shine_mapping_incremental():
             sem_loss = 0.
             if config.semantic_on:
                 loss_nll = nn.NLLLoss(reduction='mean')
-                sem_label_decimation = 1000
-                sem_loss = loss_nll(sem_pred[::sem_label_decimation,:], sem_label[::sem_label_decimation])
+                sem_loss = loss_nll(sem_pred[::config.sem_label_decimation,:], sem_label[::config.sem_label_decimation])
                 cur_loss += config.weight_s * sem_loss
 
             opt.zero_grad(set_to_none=True)
@@ -178,7 +177,7 @@ def run_shine_mapping_incremental():
             else: # only show frame and current point cloud
                 vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref)
 
-            # visualize the octree
+            # visualize the octree (it is a bit slow and memory intensive for the visualization)
             # if vis_mesh: 
             #     cur_mesh.transform(dataset.begin_pose_inv)
             #     vis_list = [] # create a list of bbx for the octree nodes

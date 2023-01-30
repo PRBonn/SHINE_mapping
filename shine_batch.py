@@ -159,8 +159,7 @@ def run_shine_mapping_batch():
         sem_loss = 0.
         if config.semantic_on:
             loss_nll = nn.NLLLoss(reduction='mean')
-            sem_label_decimation = 1000
-            sem_loss = loss_nll(sem_pred[::sem_label_decimation,:], sem_label[::sem_label_decimation])
+            sem_loss = loss_nll(sem_pred[::config.sem_label_decimation,:], sem_label[::config.sem_label_decimation])
             cur_loss += config.weight_s * sem_loss
 
         T4 = get_time()

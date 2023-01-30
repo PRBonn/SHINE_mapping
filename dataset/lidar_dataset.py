@@ -26,6 +26,7 @@ class LiDARDataset(Dataset):
         self.config = config
         self.dtype = config.dtype
         torch.set_default_dtype(self.dtype)
+        self.device = config.device
 
         self.calib = {}
         if config.calib_path != '':
@@ -48,15 +49,6 @@ class LiDARDataset(Dataset):
         self.pc_filenames = natsorted(os.listdir(config.pc_path)) # sort files as 1, 2,… 9, 10 not 1, 10, 100 with natsort
         self.total_pc_count = len(self.pc_filenames)
 
-        dev = config.device
-        self.coord_pool = torch.empty((0, 3), device=dev, dtype=self.dtype)
-        self.sdf_label_pool = torch.empty((0), device=dev, dtype=self.dtype)
-        self.normal_label_pool = torch.empty((0, 3), device=dev, dtype=self.dtype)
-        self.sem_label_pool = torch.empty((0), device=dev, dtype=int)
-        self.weight_pool = torch.empty((0), device=dev, dtype=self.dtype)
-        self.sample_depth_pool = torch.empty((0), device=dev, dtype=self.dtype)
-        self.ray_depth_pool = torch.empty((0), device=dev, dtype=self.dtype)
-
         # feature octree
         self.octree = octree
 
@@ -75,8 +67,9 @@ class LiDARDataset(Dataset):
         self.map_bbx = o3d.geometry.AxisAlignedBoundingBox()
 
         # get the pose in the reference frame
-        self.begin_pose_inv = np.eye(4)
+        self.used_pc_count = 0
         begin_flag = False
+        self.begin_pose_inv = np.eye(4)
         for frame_id in range(self.total_pc_count):
             if (
                 frame_id < config.begin_frame
@@ -95,12 +88,30 @@ class LiDARDataset(Dataset):
             self.poses_ref[frame_id] = np.matmul(
                 self.begin_pose_inv, self.poses_w[frame_id]
             )
+            self.used_pc_count += 1
         # or we directly use the world frame as reference
+
+        # to cope with the gpu memory issue (use cpu memory for the data pool, a bit slower for moving between cpu and gpu)
+        if self.used_pc_count > config.pc_count_gpu_limit and not config.continual_learning_reg:
+            self.pool_device = "cpu"
+            self.to_cpu = True
+            print("too many scans, use cpu memory")
+        else:
+            self.pool_device = config.device
+            self.to_cpu = False
+
+        # data pool
+        self.coord_pool = torch.empty((0, 3), device=self.pool_device, dtype=self.dtype)
+        self.sdf_label_pool = torch.empty((0), device=self.pool_device, dtype=self.dtype)
+        self.normal_label_pool = torch.empty((0, 3), device=self.pool_device, dtype=self.dtype)
+        self.color_label_pool = torch.empty((0, 3), device=self.pool_device, dtype=self.dtype)
+        self.sem_label_pool = torch.empty((0), device=self.pool_device, dtype=torch.long)
+        self.weight_pool = torch.empty((0), device=self.pool_device, dtype=self.dtype)
+        self.sample_depth_pool = torch.empty((0), device=self.pool_device, dtype=self.dtype)
+        self.ray_depth_pool = torch.empty((0), device=self.pool_device, dtype=self.dtype)
 
     def process_frame(self, frame_id, incremental_on = False):
 
-        dev = self.config.device
-        # dev = 'cpu'
         pc_radius = self.config.pc_radius
         min_z = self.config.min_z
         max_z = self.config.max_z
@@ -171,7 +182,7 @@ class LiDARDataset(Dataset):
         # self.last_pose_ref = self.cur_pose_ref
         
         frame_origin = self.cur_pose_ref[:3, 3] * self.config.scale  # translation part
-        frame_origin_torch = torch.tensor(frame_origin, dtype=self.dtype, device=dev)
+        frame_origin_torch = torch.tensor(frame_origin, dtype=self.dtype, device=self.device)
 
         # transform to reference frame 
         frame_pc = frame_pc.transform(self.cur_pose_ref)
@@ -185,15 +196,15 @@ class LiDARDataset(Dataset):
         # and scale to [-1,1] coordinate system
         frame_pc_s = frame_pc.scale(self.config.scale, center=(0,0,0))
 
-        frame_pc_s_torch = torch.tensor(np.asarray(frame_pc_s.points), dtype=self.dtype, device=dev)
+        frame_pc_s_torch = torch.tensor(np.asarray(frame_pc_s.points), dtype=self.dtype, device=self.device)
 
         frame_normal_torch = None
         if self.config.estimate_normal:
-            frame_normal_torch = torch.tensor(np.asarray(frame_pc_s.normals), dtype=self.dtype, device=dev)
+            frame_normal_torch = torch.tensor(np.asarray(frame_pc_s.normals), dtype=self.dtype, device=self.device)
 
         frame_label_torch = None
         if self.config.semantic_on:
-            frame_label_torch = torch.tensor(frame_sem_label, dtype=self.dtype, device=dev)
+            frame_label_torch = torch.tensor(frame_sem_label, dtype=self.dtype, device=self.device)
 
         # print("Frame point cloud count:", frame_pc_s_torch.shape[0])
 
@@ -202,41 +213,43 @@ class LiDARDataset(Dataset):
             self.sampler.sample(frame_pc_s_torch, frame_origin_torch, \
             frame_normal_torch, frame_label_torch)
 
+        # update feature octree
+        if self.config.octree_from_surface_samples:
+            # update with the sampled surface points
+            self.octree.update(coord[weight > 0, :].to("cuda"), incremental_on)
+        else:
+            # update with the original points
+            self.octree.update(frame_pc_s_torch.to("cuda"), incremental_on)  
+
+        # get the data pool ready for training
         # ray-wise samples order
         if incremental_on:
             self.coord_pool = coord
             self.sdf_label_pool = sdf_label
             self.normal_label_pool = normal_label
             self.sem_label_pool = sem_label
+            # self.color_label_pool = color_label
             self.weight_pool = weight
             self.sample_depth_pool = sample_depth
             self.ray_depth_pool = ray_depth        
         else: # batch processing
-            self.coord_pool = torch.cat((self.coord_pool, coord), 0)            
-            self.weight_pool = torch.cat((self.weight_pool, weight), 0)
+            self.coord_pool = torch.cat((self.coord_pool, coord.to(self.pool_device)), 0)            
+            self.weight_pool = torch.cat((self.weight_pool, weight.to(self.pool_device)), 0)
             if self.config.ray_loss:
-                self.sample_depth_pool = torch.cat((self.sample_depth_pool, sample_depth), 0)
-                self.ray_depth_pool = torch.cat((self.ray_depth_pool, ray_depth), 0)
+                self.sample_depth_pool = torch.cat((self.sample_depth_pool, sample_depth.to(self.pool_device)), 0)
+                self.ray_depth_pool = torch.cat((self.ray_depth_pool, ray_depth.to(self.pool_device)), 0)
             else:
-                self.sdf_label_pool = torch.cat((self.sdf_label_pool, sdf_label), 0)
+                self.sdf_label_pool = torch.cat((self.sdf_label_pool, sdf_label.to(self.pool_device)), 0)
 
             if normal_label is not None:
-                self.normal_label_pool = torch.cat((self.normal_label_pool, normal_label), 0)
+                self.normal_label_pool = torch.cat((self.normal_label_pool, normal_label.to(self.pool_device)), 0)
             else:
                 self.normal_label_pool = None
             
             if sem_label is not None:
-                self.sem_label_pool = torch.cat((self.sem_label_pool, sem_label), 0)
+                self.sem_label_pool = torch.cat((self.sem_label_pool, sem_label.to(self.pool_device)), 0)
             else:
                 self.sem_label_pool = None
-
-        # update feature octree
-        if self.config.octree_from_surface_samples:
-            # update with the sampled surface points
-            self.octree.update(coord[weight > 0, :], incremental_on)
-        else:
-            # update with the original points
-            self.octree.update(frame_pc_s_torch.to("cuda"), incremental_on)  
 
     def read_point_cloud(self, filename: str):
         # read point cloud from either (*.ply, *.pcd) or (kitti *.bin) format
@@ -274,24 +287,18 @@ class LiDARDataset(Dataset):
                 "The format of the imported point labels is wrong (support only *label)"
             )
 
-        points, labels = self.preprocess_sem_kitti(
-            points, labels, self.config.min_z, self.config.min_range
+        points, sem_labels = self.preprocess_sem_kitti(
+            points, labels, self.config.min_z, self.config.min_range, filter_moving=self.config.filter_moving_object
         )
 
-        sem_labels = labels & 0xFFFF
-        # ins_labels = labels >> 16
-
-        sem_labels_coarse = [sem_kitti_learning_map[sem_label] for sem_label in sem_labels]
-
-        # sem_rgb = [sem_kitti_color_map[sem_label_coarse] for sem_label_coarse in sem_labels_coarse]
-
-        sem_labels_coarse = (np.asarray(sem_labels_coarse)/255.0).reshape((-1, 1)).repeat(3, axis=1) # label 
+        sem_labels = (np.asarray(sem_labels)/255.0).reshape((-1, 1)).repeat(3, axis=1) # label 
 
         # TODO: better to use o3d.t.geometry.PointCloud(device)
+        # a bit too cubersome
         # then you can use sdf_map_pc.point['positions'], sdf_map_pc.point['intensities'], sdf_map_pc.point['labels']
         pc_out = o3d.geometry.PointCloud()
         pc_out.points = o3d.utility.Vector3dVector(points)
-        pc_out.colors = o3d.utility.Vector3dVector(sem_labels_coarse)
+        pc_out.colors = o3d.utility.Vector3dVector(sem_labels)
 
         return pc_out
 
@@ -302,31 +309,28 @@ class LiDARDataset(Dataset):
         points = points[np.linalg.norm(points, axis=1) >= min_range]
         return points
 
-    def preprocess_sem_kitti(self, points, labels, z_th=-3.0, min_range=2.5, filter_moving = True):
-        # filter the outliers
-        
-        # z = points[:, 2]
-        # points = points[z > z_th]
-        # labels = labels[z > z_th]
+    def preprocess_sem_kitti(self, points, labels, min_range=2.75, filter_outlier = True, filter_moving = True):
+        # TODO: speed up
+        sem_labels = np.array(labels & 0xFFFF)
 
-        # filtered_idx = np.linalg.norm(points, axis=1) >= min_range
-        # points = points[filtered_idx]
-        # labels = labels[filtered_idx]
+        range_filtered_idx = np.linalg.norm(points, axis=1) >= min_range
+        points = points[range_filtered_idx]
+        sem_labels = sem_labels[range_filtered_idx]
 
         # filter the outliers according to semantic labels
-        sem_labels = labels & 0xFFFF
-        
-        filtered_idx = sem_labels > 1
-        points = points[filtered_idx]
-        labels = labels[filtered_idx]
-
         if filter_moving:
-            sem_labels = labels & 0xFFFF
-            filtered_idx = sem_labels < 100 
+            filtered_idx = sem_labels < 100
             points = points[filtered_idx]
-            labels = labels[filtered_idx]
+            sem_labels = sem_labels[filtered_idx]
 
-        return points, labels
+        if filter_outlier:
+            filtered_idx = (sem_labels != 1) # not outlier
+            points = points[filtered_idx]
+            sem_labels = sem_labels[filtered_idx]
+        
+        sem_labels_main_class = np.array([sem_kitti_learning_map[sem_label] for sem_label in sem_labels]) # get the reduced label [0-20]
+
+        return points, sem_labels_main_class
     
     def write_merged_pc(self, out_path):
         map_down_pc_out = copy.deepcopy(self.map_down_pc)
@@ -340,9 +344,6 @@ class LiDARDataset(Dataset):
         else:
             return self.sdf_label_pool.shape[0]  # point sample count
 
-    # NOTE: avoid using data loader to load data that are already in gpu
-    # But for really large-scale dataset (>1000 frames), and your gpu memory is not big enough, 
-    # It's better to sill use this
     # deprecated
     def __getitem__(self, index: int):
         # use ray sample (each sample containing all the sample points on the ray)
@@ -372,49 +373,48 @@ class LiDARDataset(Dataset):
         # use ray sample (each sample containing all the sample points on the ray)
         if self.config.ray_loss:
             train_ray_count = self.ray_depth_pool.shape[0]
-            ray_index = torch.randint(0, train_ray_count, (self.config.bs,), device=self.config.device)
+            ray_index = torch.randint(0, train_ray_count, (self.config.bs,), device=self.pool_device)
 
             ray_index_repeat = (ray_index * self.ray_sample_count).repeat(self.ray_sample_count, 1)
             sample_index = ray_index_repeat + torch.arange(0, self.ray_sample_count,\
-                 dtype=int, device=self.config.device).reshape(-1, 1)
+                 dtype=int, device=self.device).reshape(-1, 1)
             index = sample_index.transpose(0,1).reshape(-1)
 
-            coord = self.coord_pool[index, :]
-            weight = self.weight_pool[index]
-            sample_depth = self.sample_depth_pool[index]
+            coord = self.coord_pool[index, :].to(self.device)
+            weight = self.weight_pool[index].to(self.device)
+            sample_depth = self.sample_depth_pool[index].to(self.device)
 
             if self.normal_label_pool is not None:
-                normal_label = self.normal_label_pool[index, :]
+                normal_label = self.normal_label_pool[index, :].to(self.device)
             else: 
                 normal_label = None
 
             if self.sem_label_pool is not None:
-                sem_label = self.sem_label_pool[ray_index * self.ray_sample_count] # one semantic label for one ray
+                sem_label = self.sem_label_pool[ray_index * self.ray_sample_count].to(self.device) # one semantic label for one ray
             else: 
                 sem_label = None
 
-            ray_depth = self.ray_depth_pool[ray_index]
+            ray_depth = self.ray_depth_pool[ray_index].to(self.device)
 
             return coord, sample_depth, ray_depth, normal_label, sem_label, weight
-
+        
         else: # use point sample
             train_sample_count = self.sdf_label_pool.shape[0]
-            index = torch.randint(0, train_sample_count, (self.config.bs,), device=self.config.device)
-            coord = self.coord_pool[index, :]
-            sdf_label = self.sdf_label_pool[index]
+            index = torch.randint(0, train_sample_count, (self.config.bs,), device=self.pool_device)
+            coord = self.coord_pool[index, :].to(self.device)
+            sdf_label = self.sdf_label_pool[index].to(self.device)
             
             if self.normal_label_pool is not None:
-                normal_label = self.normal_label_pool[index, :]
+                normal_label = self.normal_label_pool[index, :].to(self.device)
             else: 
                 normal_label = None
             
             if self.sem_label_pool is not None:
-                sem_label = self.sem_label_pool[index]
+                sem_label = self.sem_label_pool[index].to(self.device)
             else: 
                 sem_label = None
 
-            weight = self.weight_pool[index]
+            weight = self.weight_pool[index].to(self.device)
 
             return coord, sdf_label, normal_label, sem_label, weight
-
 

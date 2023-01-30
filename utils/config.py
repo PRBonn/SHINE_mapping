@@ -31,6 +31,7 @@ class SHINEConfig:
         self.device: str = "cuda"  # use "cuda" or "cpu"
         self.gpu_id: str = "0"  # used GPU id
         self.dtype = torch.float32 # default torch tensor data type
+        self.pc_count_gpu_limit: int = 500 # maximum used frame number to be stored in the gpu
 
         # just a ramdom number for the global shift of the input on z axis (used to avoid octree boundary marching cubes issues)
         self.global_shift_default: float = 0.17241 
@@ -69,11 +70,14 @@ class SHINEConfig:
             20  # supporting neighbor count for estimating the normal
         )
 
+        # semantic related
         self.semantic_on: bool = False # semantic shine mapping on [semantic]
         self.sem_class_count: int = 20 # semantic class count: 20 for semantic kitti
+        self.sem_label_decimation: int = 1 # use only 1/${sem_label_decimation} of the available semantic labels for training (fitting)
+        self.filter_moving_object: bool = True
 
         # frame-wise downsampling ratio for the merged map point cloud (unit: m)
-        self.map_vox_down_m: float = 0.1 
+        self.map_vox_down_m: float = 0.15 
 
         # octree
         self.tree_level_world: int = (
