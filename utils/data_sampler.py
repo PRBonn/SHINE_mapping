@@ -11,6 +11,7 @@ class dataSampler():
     def __init__(self, config: SHINEConfig):
 
         self.config = config
+        self.dev = config.device
 
 
     # input and output are all torch tensors
@@ -19,7 +20,7 @@ class dataSampler():
                normal_torch,
                sem_label_torch):
 
-        dev = self.config.device
+        dev = self.dev
 
         world_scale = self.config.scale
         surface_sample_range_scaled = self.config.surface_sample_range_m * self.config.scale
@@ -157,9 +158,6 @@ class dataSampler():
 
         space_carving_samples = origins + directions*((depth[mask,0] + steps.reshape(1,-1)*depth_range).reshape(-1,1))
 
-        space_carving_labels = torch.zeros(space_carving_samples.shape[0], device=self.device) # all as 0 (free)
+        space_carving_labels = torch.zeros(space_carving_samples.shape[0], device=self.dev) # all as 0 (free)
 
         return space_carving_samples, space_carving_labels
-
-    # def get_local_map_bbx(self):
-    #     return self.local_map_bbx

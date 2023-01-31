@@ -76,8 +76,8 @@ class SHINEConfig:
         self.sem_label_decimation: int = 1 # use only 1/${sem_label_decimation} of the available semantic labels for training (fitting)
         self.filter_moving_object: bool = True
 
-        # frame-wise downsampling ratio for the merged map point cloud (unit: m)
-        self.map_vox_down_m: float = 0.15 
+        # frame-wise downsampling voxel size for the merged map point cloud (unit: m)
+        self.map_vox_down_m: float = 0.2 
 
         # octree
         self.tree_level_world: int = (

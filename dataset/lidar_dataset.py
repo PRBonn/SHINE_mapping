@@ -95,6 +95,7 @@ class LiDARDataset(Dataset):
         if self.used_pc_count > config.pc_count_gpu_limit and not config.continual_learning_reg:
             self.pool_device = "cpu"
             self.to_cpu = True
+            self.sampler.dev = "cpu"
             print("too many scans, use cpu memory")
         else:
             self.pool_device = config.device
@@ -182,7 +183,7 @@ class LiDARDataset(Dataset):
         # self.last_pose_ref = self.cur_pose_ref
         
         frame_origin = self.cur_pose_ref[:3, 3] * self.config.scale  # translation part
-        frame_origin_torch = torch.tensor(frame_origin, dtype=self.dtype, device=self.device)
+        frame_origin_torch = torch.tensor(frame_origin, dtype=self.dtype, device=self.pool_device)
 
         # transform to reference frame 
         frame_pc = frame_pc.transform(self.cur_pose_ref)
@@ -196,15 +197,15 @@ class LiDARDataset(Dataset):
         # and scale to [-1,1] coordinate system
         frame_pc_s = frame_pc.scale(self.config.scale, center=(0,0,0))
 
-        frame_pc_s_torch = torch.tensor(np.asarray(frame_pc_s.points), dtype=self.dtype, device=self.device)
+        frame_pc_s_torch = torch.tensor(np.asarray(frame_pc_s.points), dtype=self.dtype, device=self.pool_device)
 
         frame_normal_torch = None
         if self.config.estimate_normal:
-            frame_normal_torch = torch.tensor(np.asarray(frame_pc_s.normals), dtype=self.dtype, device=self.device)
+            frame_normal_torch = torch.tensor(np.asarray(frame_pc_s.normals), dtype=self.dtype, device=self.pool_device)
 
         frame_label_torch = None
         if self.config.semantic_on:
-            frame_label_torch = torch.tensor(frame_sem_label, dtype=self.dtype, device=self.device)
+            frame_label_torch = torch.tensor(frame_sem_label, dtype=self.dtype, device=self.pool_device)
 
         # print("Frame point cloud count:", frame_pc_s_torch.shape[0])
 
@@ -216,10 +217,10 @@ class LiDARDataset(Dataset):
         # update feature octree
         if self.config.octree_from_surface_samples:
             # update with the sampled surface points
-            self.octree.update(coord[weight > 0, :].to("cuda"), incremental_on)
+            self.octree.update(coord[weight > 0, :].to(self.device), incremental_on)
         else:
             # update with the original points
-            self.octree.update(frame_pc_s_torch.to("cuda"), incremental_on)  
+            self.octree.update(frame_pc_s_torch.to(self.device), incremental_on)  
 
         # get the data pool ready for training
         # ray-wise samples order
