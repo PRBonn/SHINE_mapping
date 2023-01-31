@@ -187,7 +187,7 @@ def run_shine_mapping_batch():
         # save checkpoint model
         if (((iter+1) % config.save_freq_iters) == 0 and iter > 0):
             checkpoint_name = 'model/model_iter_' + str(iter+1)
-            octree.clear_temp()
+            # octree.clear_temp()
             save_checkpoint(octree, geo_mlp, sem_mlp, opt, run_path, checkpoint_name, iter)
             save_decoder(geo_mlp, sem_mlp, run_path, checkpoint_name) # save both the gro and sem decoders
 
@@ -196,7 +196,10 @@ def run_shine_mapping_batch():
             print("Begin mesh reconstruction from the implicit map")               
             mesh_path = run_path + '/mesh/mesh_iter_' + str(iter+1) + ".ply"
             map_path = run_path + '/map/sdf_map_iter_' + str(iter+1) + ".ply"
-            cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.semantic_on)
+            if config.mc_with_octree: # default
+                cur_mesh = mesher.recon_octree_mesh(config.mc_query_level, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+            else:
+                cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
             
             if config.o3d_vis_on:
                 cur_mesh.transform(dataset.begin_pose_inv)

@@ -182,7 +182,9 @@ class SHINEConfig:
         # marching cubes related
         self.mc_res_m: float = 0.1
         self.pad_voxel: int = 0
-        self.mc_vis_level: int = 1
+        self.mc_with_octree: bool = True # conducting marching cubes reconstruction within a certain level of the octree or within the axis-aligned bounding box of the whole map
+        self.mc_query_level: int = 8
+        self.mc_vis_level: int = 1 # masked the marching cubes for level higher than this
         self.mc_mask_on: bool = False # use mask for marching cubes to avoid the artifacts
         
         self.infer_bs: int = 4096
@@ -374,6 +376,7 @@ class SHINEConfig:
 
         self.calculate_world_scale()
         self.infer_bs = self.bs * 16
+        self.mc_query_level = self.tree_level_world - self.tree_level_feat + 1
     
     # calculate the scale for compressing the world into a [-1,1] kaolin cube
     def calculate_world_scale(self):

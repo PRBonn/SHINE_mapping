@@ -166,7 +166,10 @@ def run_shine_mapping_incremental():
             # print("Begin reconstruction from implicit mapn")               
             mesh_path = run_path + '/mesh/mesh_frame_' + str(frame_id+1) + ".ply"
             map_path = run_path + '/map/sdf_map_frame_' + str(frame_id+1) + ".ply"
-            cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.semantic_on)
+            if config.mc_with_octree: # default
+                cur_mesh = mesher.recon_octree_mesh(config.mc_query_level, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+            else:
+                cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
 
         T3 = get_time()
 
