@@ -242,13 +242,19 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
 **KITTI**
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/34207278/206718854-aefa02ec-72ac-470e-a3d0-d61e7d886692.png" width="70%" />
+  <img src="https://user-images.githubusercontent.com/34207278/216335116-45273ef9-adb8-4f03-9e58-c5ca60b03081.png" width="70%" />
 </p>
 
 **Newer College**
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/34207278/206719372-477f1a90-e2b1-44ac-a56e-22e8e5810147.png" width="70%" />
+</p>
+
+**Apollo**
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/34207278/212333973-ad1a0c14-550f-4266-902f-08c33f9f79c1.png" width="70%" />
 </p>
 
 **RGB-D**
@@ -263,10 +269,10 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
   <img src="https://user-images.githubusercontent.com/34207278/207911217-c27a52c9-7233-4db9-a1fd-3487e59e6529.png" width="70%" />
 </p>
 
-**Apollo**
+**Office**
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/34207278/212333973-ad1a0c14-550f-4266-902f-08c33f9f79c1.png" width="70%" />
+  <img src="https://user-images.githubusercontent.com/34207278/216360654-9b0a8bda-6a98-4db1-aa25-1c58080a4585.png" width="70%" />
 </p>
 
 
@@ -325,7 +331,7 @@ If you have any questions, please contact:
 - Yue Pan {[yue.pan@igg.uni-bonn.de]()}
 
 ## Acknowledgment
-This work has partially been funded by the European Union’s HORIZON programme under grant agreement No 101070405 (DigiForest).
+This work has partially been funded by the European Union’s HORIZON programme under grant agreement No 101070405 (DigiForest) and grant agreement No 101017008 (Harmony).
 
 Additional, we thanks greatly for the authors of the following opensource projects:
 

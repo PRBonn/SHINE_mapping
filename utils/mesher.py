@@ -271,6 +271,7 @@ class Mesher():
         return mesh
 
     # reconstruct the map sparsely using the octree, only query the sdf at certain level ($query_level) of the octree
+    # much faster and also memory-wise more efficient
     def recon_octree_mesh(self, query_level, mc_res_m, mesh_path, map_path, \
                           save_map = False, estimate_sem = False, estimate_normal = True, \
                           filter_isolated_mesh = True, filter_free_space_vertices = True): 
@@ -300,8 +301,8 @@ class Mesher():
         # the voxel count for the whole map
         voxel_count_per_side = ((max_nodes - min_nodes)/mc_res_scaled+voxel_count_per_side_node).astype(int)
         # initialize the whole map
-        query_grid_sdf = np.zeros((voxel_count_per_side[0], voxel_count_per_side[1], voxel_count_per_side[2])) 
-        query_grid_mask = np.zeros((voxel_count_per_side[0], voxel_count_per_side[1], voxel_count_per_side[2])).astype(dtype=bool) # mask off
+        query_grid_sdf = np.zeros((voxel_count_per_side[0], voxel_count_per_side[1], voxel_count_per_side[2]), dtype=np.float16) # use float16 to save memory
+        query_grid_mask = np.zeros((voxel_count_per_side[0], voxel_count_per_side[1], voxel_count_per_side[2]), dtype=bool)  # mask off
 
         for node_idx in tqdm(range(nodes_count)):
             node_coord_scaled = nodes_coord_scaled[node_idx, :]
@@ -318,8 +319,8 @@ class Mesher():
         mc_voxel_size = mc_res_scaled / self.world_scale
         mc_voxel_origin = (min_nodes - 0.5 * (node_res_scaled - mc_res_scaled)) / self.world_scale
 
-        # if save_map: # ignore it now
-        #     # query_grid_coord = 
+        # if save_map: # ignore it now, too much for the memory
+        #     # query_grid_coord 
         #     self.generate_sdf_map(query_grid_coord, query_grid_sdf, query_grid_mask, map_path)
 
         verts, faces = self.mc_mesh(query_grid_sdf, query_grid_mask, mc_voxel_size, mc_voxel_origin)
