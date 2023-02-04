@@ -4,4 +4,5 @@
 *.bag
 *.ply
 *.pyc
+*.tar
 /data
