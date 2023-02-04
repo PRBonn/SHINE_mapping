@@ -6,7 +6,7 @@ setting:
   calib_path: "./data/ncd_example/quad/calib.txt"
   load_model: False
   model_path: "" 
-  first_frame_ref: False
+  first_frame_ref: False # Whether to place the first frame in the reference position, default = False
   begin_frame: 0
   end_frame: 1300
   every_frame: 5 # 1 means does not skip
@@ -55,7 +55,7 @@ eval:
   wandb_vis_on: False # log to wandb or not
   vis_freq_iters: 5000 # reconstruct the mesh every x iterations
   save_freq_iters: 10000 # save the model and octree every x iterations
-  mesh_freq_frame: 1
+  mesh_freq_frame: 1300
   mc_res_m: 0.1 # reconstruction marching cubes resolution
   mc_vis_level: 1
   save_map: False # save the sdf map or not 
