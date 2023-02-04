@@ -11,6 +11,7 @@ class dataSampler():
     def __init__(self, config: SHINEConfig):
 
         self.config = config
+        self.dev = config.device
 
 
     # input and output are all torch tensors
@@ -19,7 +20,7 @@ class dataSampler():
                normal_torch,
                sem_label_torch):
 
-        dev = self.config.device
+        dev = self.dev
 
         world_scale = self.config.scale
         surface_sample_range_scaled = self.config.surface_sample_range_m * self.config.scale
@@ -127,15 +128,15 @@ class dataSampler():
         return all_sample_points, sdf_label_tensor, normal_label_tensor, sem_label_tensor, \
             weight_tensor, depths_tensor, distances
     
-    
+
+    # space carving sampling (deprecated, to polish)
     def sapce_carving_sample(self, 
                              points_torch, 
                              sensor_origin_torch,
                              space_carving_level,
                              stop_depth_thre,
                              inter_dist_thre):
-        # space carving sampling (deprecated, to polish)
-
+        
         shift_points = points_torch - sensor_origin_torch
         # distances = torch.linalg.norm(shift_points, dim=1, keepdim=True)
         spc = kal.ops.conversions.unbatched_pointcloud_to_spc(shift_points, space_carving_level)
@@ -157,9 +158,6 @@ class dataSampler():
 
         space_carving_samples = origins + directions*((depth[mask,0] + steps.reshape(1,-1)*depth_range).reshape(-1,1))
 
-        space_carving_labels = torch.zeros(space_carving_samples.shape[0], device=self.device) # all as 0 (free)
+        space_carving_labels = torch.zeros(space_carving_samples.shape[0], device=self.dev) # all as 0 (free)
 
         return space_carving_samples, space_carving_labels
-
-    # def get_local_map_bbx(self):
-    #     return self.local_map_bbx

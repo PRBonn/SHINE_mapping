@@ -19,10 +19,10 @@ process:
   vox_down_m: 0.05
   rand_down_r: 0.2
 sampler:
-  surface_sample_range_m: 0.3
+  surface_sample_range_m: 0.5
   surface_sample_n: 3
   free_sample_begin_ratio: 0.3
-  free_sample_end_dist: 0.8
+  free_sample_end_dist: 1.0
   free_sample_n: 3
 octree:
   leaf_vox_size: 0.2
@@ -57,5 +57,6 @@ eval:
   save_freq_iters: 10000 # save the model and octree every x iterations
   mesh_freq_frame: 5 # reconstruct the mesh every x frames
   mc_res_m: 0.1 # reconstruction marching cubes resolution
-  mc_vis_level: 1
+  mc_mask_on: True
+  mc_vis_level: 2
   save_map: False # save the sdf map or not 

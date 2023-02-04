@@ -31,6 +31,10 @@ class SHINEConfig:
         self.device: str = "cuda"  # use "cuda" or "cpu"
         self.gpu_id: str = "0"  # used GPU id
         self.dtype = torch.float32 # default torch tensor data type
+        self.pc_count_gpu_limit: int = 500 # maximum used frame number to be stored in the gpu
+
+        # just a ramdom number for the global shift of the input on z axis (used to avoid octree boundary marching cubes issues)
+        self.global_shift_default: float = 0.17241 
 
         # baseline
         # self.run_baseline = False
@@ -66,10 +70,14 @@ class SHINEConfig:
             20  # supporting neighbor count for estimating the normal
         )
 
+        # semantic related
         self.semantic_on: bool = False # semantic shine mapping on [semantic]
+        self.sem_class_count: int = 20 # semantic class count: 20 for semantic kitti
+        self.sem_label_decimation: int = 1 # use only 1/${sem_label_decimation} of the available semantic labels for training (fitting)
+        self.filter_moving_object: bool = True
 
-        # frame-wise downsampling ratio for the merged map point cloud (unit: m)
-        self.map_vox_down_m: float = 0.1 
+        # frame-wise downsampling voxel size for the merged map point cloud (unit: m)
+        self.map_vox_down_m: float = 0.2 
 
         # octree
         self.tree_level_world: int = (
@@ -103,7 +111,7 @@ class SHINEConfig:
         self.continual_learning_reg: bool = True
         # regularization based
         self.lambda_forget: float = 1e5
-        self.cal_importance_weight_down_rate: int = 1 # set it larger to save the consuming time
+        self.cal_importance_weight_down_rate: int = 5 # set it larger to save the consuming time
         
         # replay based
         self.history_sample_ratio: int = 1
@@ -114,9 +122,14 @@ class SHINEConfig:
         self.occu_update_on: bool = False
 
         # decoder
-        self.mlp_level: int = 2
-        self.mlp_hidden_dim: int = 64
-        self.mlp_bias_on: bool = True
+        self.geo_mlp_level: int = 2
+        self.geo_mlp_hidden_dim: int = 32
+        self.geo_mlp_bias_on: bool = True
+
+        self.sem_mlp_level: int = 2
+        self.sem_mlp_hidden_dim: int = 32
+        self.sem_mlp_bias_on: bool = True
+        
         self.freeze_after_frame: int = 20  # For incremental mode only, if the decoder model is not loaded , it would be trained and freezed after such frame number
 
         # loss
@@ -158,6 +171,7 @@ class SHINEConfig:
 
         # eval
         self.wandb_vis_on: bool = False
+        self.o3d_vis_on: bool = True # visualize the mesh in-the-fly using o3d visualzier or not [press space to pasue/resume]
         self.eval_on: bool = False
         self.eval_outlier_thre = 0.5  # unit:m
         self.eval_freq_iters: int = 100
@@ -168,8 +182,10 @@ class SHINEConfig:
         # marching cubes related
         self.mc_res_m: float = 0.1
         self.pad_voxel: int = 0
-        self.mc_vis_level: int = 1
-        self.mc_mask_on: bool = True # use mask for marching cubes to avoid the artifacts
+        self.mc_with_octree: bool = True # conducting marching cubes reconstruction within a certain level of the octree or within the axis-aligned bounding box of the whole map
+        self.mc_query_level: int = 8
+        self.mc_vis_level: int = 1 # masked the marching cubes for level higher than this
+        self.mc_mask_on: bool = False # use mask for marching cubes to avoid the artifacts
         
         self.infer_bs: int = 4096
         self.occ_binary_mc: bool = False
@@ -201,7 +217,7 @@ class SHINEConfig:
         self.begin_frame = config_args["setting"]["begin_frame"]
         self.end_frame = config_args["setting"]["end_frame"]
         self.every_frame = config_args["setting"]["every_frame"]
-        
+
         self.device = config_args["setting"]["device"]
         self.gpu_id = config_args["setting"]["gpu_id"]
 
@@ -249,10 +265,10 @@ class SHINEConfig:
         ]  # build the octree from the surface samples or only the measurement points
 
         # decoder
-        self.mlp_level = config_args["decoder"][
+        self.geo_mlp_level = config_args["decoder"][
             "mlp_level"
         ]  # number of the level of the mlp decoder
-        self.mlp_hidden_dim = config_args["decoder"][
+        self.geo_mlp_hidden_dim = config_args["decoder"][
             "mlp_hidden_dim"
         ]  # dimension of the mlp's hidden layer
         # freeze the decoder after runing for x frames (used for incremental mapping to avoid forgeting)
@@ -341,6 +357,8 @@ class SHINEConfig:
         self.mc_vis_level = config_args["eval"][
             "mc_vis_level"
         ]
+        # using masked marching cubes according to the octree or not
+        self.mc_mask_on = config_args["eval"]["mc_mask_on"]
         self.save_map = config_args["eval"][
             "save_map"
         ] 
@@ -358,6 +376,7 @@ class SHINEConfig:
 
         self.calculate_world_scale()
         self.infer_bs = self.bs * 16
+        self.mc_query_level = self.tree_level_world - self.tree_level_feat + 1
     
     # calculate the scale for compressing the world into a [-1,1] kaolin cube
     def calculate_world_scale(self):

@@ -102,7 +102,7 @@ Use ```python -c "import kaolin; print(kaolin.__version__)"``` to check if kaoli
 
 ### 4. Install the other requirements
 ```
-pip install open3d wandb tqdm
+pip install open3d wandb tqdm natsort
 conda install scikit-image
 ```
 
@@ -205,6 +205,8 @@ For incremental mapping with regularization strategy, use:
 python shine_incre.py ./config/maicity/maicity_incre_reg.yaml
 ```
 
+An interactive visualizer would pop up. You can press `space` to pause and resume.
+
 <details>
   <summary>[Expected results (click to expand)]</summary>
 
@@ -240,13 +242,19 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
 **KITTI**
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/34207278/206718854-aefa02ec-72ac-470e-a3d0-d61e7d886692.png" width="70%" />
+  <img src="https://user-images.githubusercontent.com/34207278/216335116-45273ef9-adb8-4f03-9e58-c5ca60b03081.png" width="70%" />
 </p>
 
 **Newer College**
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/34207278/206719372-477f1a90-e2b1-44ac-a56e-22e8e5810147.png" width="70%" />
+</p>
+
+**Apollo**
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/34207278/212333973-ad1a0c14-550f-4266-902f-08c33f9f79c1.png" width="70%" />
 </p>
 
 **RGB-D**
@@ -259,6 +267,12 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/34207278/207911217-c27a52c9-7233-4db9-a1fd-3487e59e6529.png" width="70%" />
+</p>
+
+**Office**
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/34207278/216360654-9b0a8bda-6a98-4db1-aa25-1c58080a4585.png" width="70%" />
 </p>
 
 
@@ -291,6 +305,10 @@ As mentioned in the paper, we also compute a fairer accuracy metric using the gr
 
 3. SHINE Mapping supports both the offline batch mapping and the incremental sequential mapping. For incremental mapping, one can either load a fixed pre-trained decoder from the batching mapping on a similar dataset (set `load_model: True`) or train the decoder for `freeze_after_frame` frames on-the-fly and then freeze it afterwards (set `load_model: False`). The first option would lead to better mapping performance.
 
+4. You can use the `mc_vis_level` parameter to have a trade-off between the scene completion and the exact measurement accuracy. This parameter indicate at which level of the octree the marching cubes reconstruction would be conducted. The larger the value of `mc_vis_level` (but not larger than `tree_level_feat`), the more scene completion ability you would gain (but also some artifacts such as a double wall may appear). And with the small value, SHINE mapping would only reconstruct the part with actual measurements without filling the holes. The safest way to avoid the holes on the ground is to set `mc_mask_on: False` to disable the masking for marching cubes.
+
+5. The incremental mapping with regularization strategy (setting `continual_learning_reg: True`) can achieve incremental neural mapping without storing an ever-growing data pool which would be a burden for the memory. The coefficient `lambda_forget` needs to be fine-tuned under different feature octree and point sampling settings. The recommended value is from `1e5` to `1e8`. A pre-trained decoder is also recommended to be loaded during incremental mapping with regularization for better performance.
+
 </details>
 
 ----
@@ -298,11 +316,11 @@ As mentioned in the paper, we also compute a fairer accuracy metric using the gr
 ## Citation
 If you use SHINE Mapping for any academic work, please cite our original paper.
 ```
-@article{zhong2022arxiv,
+@inproceedings{zhong2023icra,
   title={SHINE-Mapping: Large-Scale 3D Mapping Using Sparse Hierarchical Implicit NEural Representations},
   author={Zhong, Xingguang and Pan, Yue and Behley, Jens and Stachniss, Cyrill},
-  journal={arXiv preprint arXiv:2210.02299},
-  year={2022}
+  booktitle = {Proceedings of the IEEE International Conference on Robotics and Automation (ICRA)},
+  year={2023}
 }
 ```
 
@@ -313,7 +331,7 @@ If you have any questions, please contact:
 - Yue Pan {[yue.pan@igg.uni-bonn.de]()}
 
 ## Acknowledgment
-This work has partially been funded by the European Union’s HORIZON programme under grant agreement No 101070405 (DigiForest).
+This work has partially been funded by the European Union’s HORIZON programme under grant agreement No 101070405 (DigiForest) and grant agreement No 101017008 (Harmony).
 
 Additional, we thanks greatly for the authors of the following opensource projects:
 

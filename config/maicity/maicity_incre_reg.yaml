@@ -1,10 +1,10 @@
 setting:
   name: "maicity_incre_reg"
   output_root: "./experiments/"
-  pc_path: "./data/mai_city/ply/sequences/01/velodyne"
-  pose_path: "./data/mai_city/ply/sequences/01/poses.txt"
-  calib_path: "./data/mai_city/ply/sequences/01/calib.txt"
-  load_model: True # load the pretrained decoder model (optional)
+  pc_path: "xxx/data/mai_city/ply/sequences/01/velodyne"
+  pose_path: "xxx/data/mai_city/ply/sequences/01/poses.txt"
+  calib_path: "xxx/data/mai_city/ply/sequences/01/calib.txt"
+  load_model: False # load the pretrained decoder model (optional)
   model_path: "./pretrained/geo_decoder_8dim.pth" 
   first_frame_ref: False
   begin_frame: 0
@@ -19,7 +19,7 @@ process:
   vox_down_m: 0.03
   rand_down_r: 0.2
 sampler:
-  surface_sample_range_m: 0.4
+  surface_sample_range_m: 0.5
   surface_sample_n: 3
   free_sample_begin_ratio: 0.3
   free_sample_end_dist: 0.8
@@ -57,5 +57,6 @@ eval:
   save_freq_iters: 0 # save the model and octree every x iterations
   mesh_freq_frame: 5 # reconstruct the mesh every x frames
   mc_res_m: 0.2 # reconstruction marching cubes resolution
-  mc_vis_level: 1 
+  mc_mask_on: True
+  mc_vis_level: 2
   save_map: False # save the sdf map or not

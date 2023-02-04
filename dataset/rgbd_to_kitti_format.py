@@ -6,6 +6,8 @@ import json
 import os
 import numpy as np
 
+from utils.tools import load_from_json
+
 def rgbd_to_kitti_format(args):
 
     ply_path = os.path.join(args.output_root, "rgbd_ply")
@@ -127,6 +129,10 @@ def write_poses_kitti_format(poses_mat, posefile):
         pose_vec= pose_mat.flatten()[0:12]
         poses_vec.append(pose_vec)
     np.savetxt(posefile, poses_vec, delimiter=' ')
+
+def parser_json_sdf_studio_format(json_file):
+    meta_data = load_from_json(json_file)
+    
 
 
 if __name__ == "__main__":

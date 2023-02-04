@@ -14,7 +14,7 @@ from utils.tools import *
 from utils.loss import *
 from utils.incre_learning import cal_feature_importance
 from utils.mesher import Mesher
-from utils.visualizer import MapVisualizer
+from utils.visualizer import MapVisualizer, random_color_table
 from model.feature_octree import FeatureOctree
 from model.decoder import Decoder
 from dataset.lidar_dataset import LiDARDataset
@@ -35,7 +35,8 @@ def run_shine_mapping_incremental():
     # initialize the feature octree
     octree = FeatureOctree(config)
     # initialize the mlp decoder
-    geo_mlp = Decoder(config)
+    geo_mlp = Decoder(config, is_geo_encoder=True)
+    sem_mlp = Decoder(config, is_geo_encoder=False)
 
     # Load the decoder model
     if config.load_model:
@@ -43,15 +44,23 @@ def run_shine_mapping_incremental():
         geo_mlp.load_state_dict(loaded_model["geo_decoder"])
         print("Pretrained decoder loaded")
         freeze_model(geo_mlp) # fixed the decoder
+        if config.semantic_on:
+            sem_mlp.load_state_dict(loaded_model["sem_decoder"])
+            freeze_model(sem_mlp) # fixed the decoder
+        if 'feature_octree' in loaded_model.keys(): # also load the feature octree  
+            octree = loaded_model["feature_octree"]
+            octree.print_detail()
 
     # dataset
     dataset = LiDARDataset(config, octree)
 
     # mesh reconstructor
-    mesher = Mesher(config, octree, geo_mlp, None)
+    mesher = Mesher(config, octree, geo_mlp, sem_mlp)
+    mesher.global_transform = inv(dataset.begin_pose_inv)
 
     # Non-blocking visualizer
-    # vis = MapVisualizer()
+    if config.o3d_vis_on:
+        vis = MapVisualizer()
 
     # learnable parameters
     geo_mlp_param = list(geo_mlp.parameters())
@@ -73,15 +82,15 @@ def run_shine_mapping_incremental():
         
         vis_mesh = False 
 
+        if processed_frame == config.freeze_after_frame: # freeze the decoder after certain frame
+            print("Freeze the decoder")
+            freeze_model(geo_mlp) # fixed the decoder
+
         T0 = get_time()
         # preprocess, sample data and update the octree
         # if continual_learning_reg is on, we only keep the current frame's sample in the data pool,
         # otherwise we accumulate the data pool with the current frame's sample
         dataset.process_frame(frame_id, incremental_on=config.continual_learning_reg)
-
-        if processed_frame == config.freeze_after_frame: # freeze the decoder after certain frame
-            print("Freeze the decoder")
-            freeze_model(geo_mlp) # fixed the decoder
         
         octree_feat = list(octree.parameters())
         opt = setup_optimizer(config, octree_feat, geo_mlp_param, None, sigma_size)
@@ -93,18 +102,19 @@ def run_shine_mapping_incremental():
             # load batch data (avoid using dataloader because the data are already in gpu, memory vs speed)
             coord, sdf_label, _, _, weight = dataset.get_batch() # do not use the ray loss，这里是为什么呢？为什么不能用 ray loss 呢？
             
-            octree.get_indices(coord)
-            
-            if config.ekional_loss_on: # 这个为什么默认 关掉了呢？
-                coord.requires_grad_()
-            
+            if config.normal_loss_on or config.ekional_loss_on:
+                coord.requires_grad_(True)
+
             # interpolate and concat the hierachical grid features
-            feature = octree.query_feature(coord) 
+            feature = octree.query_feature(coord)
             
             # predict the scaled sdf with the feature
             sdf_pred = geo_mlp.sdf(feature)
+            if config.semantic_on:
+                sem_pred = sem_mlp.sem_label_prob(feature)
 
             # calculate the loss
+            surface_mask = weight > 0
             cur_loss = 0.
             weight = torch.abs(weight) # weight's sign indicate the sample is around the surface or in the free space
             sdf_loss = sdf_bce_loss(sdf_pred, sdf_label, sigma_sigmoid, weight, config.loss_weight_on, config.loss_reduction) 
@@ -118,22 +128,27 @@ def run_shine_mapping_incremental():
 
             # optional ekional loss
             eikonal_loss = 0.
-            if config.ekional_loss_on:  # 按照论文里面的描述，这里应该是开启的，实际上并没有开启，这是为什么呢？
-                surface_mask = weight > 0
-                g = gradient(coord, sdf_pred)*sigma_sigmoid
+            if config.ekional_loss_on:
+                g = get_gradient(coord, sdf_pred)*sigma_sigmoid
                 eikonal_loss = ((g[surface_mask].norm(2, dim=-1) - 1.0) ** 2).mean() # MSE with regards to 1  
                 cur_loss += config.weight_e * eikonal_loss
+            
+            # semantic classification loss
+            sem_loss = 0.
+            if config.semantic_on:
+                loss_nll = nn.NLLLoss(reduction='mean')
+                sem_loss = loss_nll(sem_pred[::config.sem_label_decimation,:], sem_label[::config.sem_label_decimation])
+                cur_loss += config.weight_s * sem_loss
 
             opt.zero_grad(set_to_none=True)
             cur_loss.backward() # this is the slowest part (about 10x the forward time) 这里作者说了下，反向传播的时间消耗是前向传播的10倍
             opt.step()
 
-            octree.set_zero() # set the trashbin feature vector back to 0 after the feature update. 我挺好奇这个 trashbin feature vector 是什么东西？垃圾箱？
             total_iter += 1
 
             if config.wandb_vis_on: # 这个是 weigth and bias 小工具，我们可以暂时不用
                 wandb_log_content = {'iter': total_iter, 'loss/total_loss': cur_loss, 'loss/sdf_loss': sdf_loss, \
-                    'loss/reg':reg_loss, 'loss/eikonal_loss': eikonal_loss} 
+                    'loss/reg':reg_loss, 'loss/eikonal_loss': eikonal_loss, 'loss/sem_loss': sem_loss} 
                 wandb.log(wandb_log_content)
         
         # calculate the importance of each octree feature
@@ -151,23 +166,42 @@ def run_shine_mapping_incremental():
             # print("Begin reconstruction from implicit mapn")               
             mesh_path = run_path + '/mesh/mesh_frame_' + str(frame_id+1) + ".ply"
             map_path = run_path + '/map/sdf_map_frame_' + str(frame_id+1) + ".ply"
-            mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path)
+            if config.mc_with_octree: # default
+                cur_mesh = mesher.recon_octree_mesh(config.mc_query_level, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+            else:
+                cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
 
         T3 = get_time()
 
-        if vis_mesh: 
-            cur_mesh = o3d.io.read_triangle_mesh(mesh_path)
-            cur_mesh.compute_vertex_normals()
-            # vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref, cur_mesh)
-        else: # only show frame and current point cloud
-            print("we do not display the mesh in the test")
-            # vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref)
+        if config.o3d_vis_on:
+            if vis_mesh: 
+                cur_mesh.transform(dataset.begin_pose_inv) # back to the globally shifted frame for vis
+                vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref, cur_mesh)
+            else: # only show frame and current point cloud
+                vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref)
+
+            # visualize the octree (it is a bit slow and memory intensive for the visualization)
+            # if vis_mesh: 
+            #     cur_mesh.transform(dataset.begin_pose_inv)
+            #     vis_list = [] # create a list of bbx for the octree nodes
+            #     for l in range(config.tree_level_feat):
+            #         nodes_coord = octree.get_octree_nodes(config.tree_level_world-l)/config.scale
+            #         box_size = np.ones(3) * config.leaf_vox_size * (2**l)
+            #         for node_coord in nodes_coord:
+            #             node_box = o3d.geometry.AxisAlignedBoundingBox(node_coord-0.5*box_size, node_coord+0.5*box_size)
+            #             node_box.color = random_color_table[l]
+            #             vis_list.append(node_box)
+            #     vis_list.append(cur_mesh)
+            #     o3d.visualization.draw_geometries(vis_list)
 
         if config.wandb_vis_on: # 这个是 weigth and bias 小工具，我们可以暂时不用，而且默认是 False
             wandb_log_content = {'frame': processed_frame, 'timing(s)/preprocess': T1-T0, 'timing(s)/mapping': T2-T1, 'timing(s)/reconstruct': T3-T2} 
             wandb.log(wandb_log_content)
 
         processed_frame += 1
+    
+    if config.o3d_vis_on:
+        vis.stop()
 
 if __name__ == "__main__":
     run_shine_mapping_incremental()

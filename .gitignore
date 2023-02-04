@@ -6,3 +6,11 @@
 *.pyc
 *.tar
 /data
+__pycache__/
+.vscode/
+*.key
+*.label
+*.txt
+*.ply
+*.bin
+*.pth

@@ -4,6 +4,7 @@ import os
 import multiprocessing
 import getpass
 import time
+from pathlib import Path
 from datetime import datetime
 from torch import optim
 from torch.optim.optimizer import Optimizer
@@ -12,6 +13,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import wandb
+import json
 import open3d as o3d
 
 from utils.config import SHINEConfig
@@ -134,8 +136,7 @@ def print_model_summary(model: nn.Module):
         print(child)
 
 
-# coord, pred
-def gradient(inputs, outputs):
+def get_gradient(inputs, outputs):
     d_points = torch.ones_like(outputs, requires_grad=False, device=outputs.device)
     points_grad = grad(
         outputs=outputs,
@@ -166,7 +167,7 @@ def save_checkpoint(
     torch.save(
         {
             "iters": iters,
-            "feature_octree": feature_octree.state_dict(),
+            "feature_octree": feature_octree, # save the whole NN module (the hierachical features and the indexing structure)
             "geo_decoder": geo_decoder.state_dict(),
             "sem_decoder": sem_decoder.state_dict(),
             "optimizer": optimizer.state_dict(),
@@ -174,6 +175,13 @@ def save_checkpoint(
         os.path.join(run_path, f"{checkpoint_name}.pth"),
     )
     print(f"save the model to {run_path}/{checkpoint_name}.pth")
+
+
+def save_decoder(geo_decoder, sem_decoder, run_path, checkpoint_name):
+    torch.save({"geo_decoder": geo_decoder.state_dict(), 
+                "sem_decoder": sem_decoder.state_dict()},
+        os.path.join(run_path, f"{checkpoint_name}_decoders.pth"),
+    )
 
 def save_geo_decoder(geo_decoder, run_path, checkpoint_name):
     torch.save({"geo_decoder": geo_decoder.state_dict()},
@@ -191,3 +199,23 @@ def get_time():
     """
     torch.cuda.synchronize()
     return time.time()
+
+def load_from_json(filename: Path):
+    """Load a dictionary from a JSON filename.
+    Args:
+        filename: The filename to load from.
+    """
+    assert filename.suffix == ".json"
+    with open(filename, encoding="UTF-8") as file:
+        return json.load(file)
+
+
+def write_to_json(filename: Path, content: dict):
+    """Write data to a JSON file.
+    Args:
+        filename: The filename to write to.
+        content: The dictionary data to write.
+    """
+    assert filename.suffix == ".json"
+    with open(filename, "w", encoding="UTF-8") as file:
+        json.dump(content, file)
