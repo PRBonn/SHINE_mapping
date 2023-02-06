@@ -59,32 +59,45 @@ class Mesher():
             mc_mask = None
         
         with torch.no_grad(): # eval step
-            # for n in tqdm(range(iter_n)):
-            for n in range(iter_n):
-                head = n*bs
-                tail = min((n+1)*bs, sample_count)
-                batch_coord = coord[head:tail, :]
-                if self.cur_device == "cpu" and self.device == "cuda":
-                    batch_coord = batch_coord.cuda()
-                batch_feature = self.octree.query_feature(batch_coord, True) # query features
+            if iter_n > 1:
+                for n in tqdm(range(iter_n)):
+                    head = n*bs
+                    tail = min((n+1)*bs, sample_count)
+                    batch_coord = coord[head:tail, :]
+                    if self.cur_device == "cpu" and self.device == "cuda":
+                        batch_coord = batch_coord.cuda()
+                    batch_feature = self.octree.query_feature(batch_coord, True) # query features
+                    if query_sdf:
+                        batch_sdf = -self.geo_decoder.sdf(batch_feature)
+                        sdf_pred[head:tail] = batch_sdf.detach().cpu().numpy()
+                    if query_sem:
+                        batch_sem = self.sem_decoder.sem_label(batch_feature)
+                        sem_pred[head:tail] = batch_sem.detach().cpu().numpy()
+                    if query_mask:
+                        # get the marching cubes mask
+                        # hierarchical_indices: bottom-up
+                        check_level_indices = self.octree.hierarchical_indices[check_level] 
+                        # print(check_level_indices)
+                        # if index is -1 for the level, then means the point is not valid under this level
+                        mask_mc = check_level_indices >= 0
+                        # print(mask_mc.shape)
+                        # all should be true (all the corner should be valid)
+                        mask_mc = torch.all(mask_mc, dim=1)
+                        mc_mask[head:tail] = mask_mc.detach().cpu().numpy()
+                        # but for scimage's marching cubes, the top right corner's mask should also be true to conduct marching cubes
+            else:
+                feature = self.octree.query_feature(coord, True)
                 if query_sdf:
-                    batch_sdf = -self.geo_decoder.sdf(batch_feature)
-                    sdf_pred[head:tail] = batch_sdf.detach().cpu().numpy()
+                    sdf_pred = -self.geo_decoder.sdf(feature).detach().cpu().numpy()
                 if query_sem:
-                    batch_sem = self.sem_decoder.sem_label(batch_feature)
-                    sem_pred[head:tail] = batch_sem.detach().cpu().numpy()
+                    sem_pred = self.sem_decoder.sem_label(feature).detach().cpu().numpy()
                 if query_mask:
                     # get the marching cubes mask
-                    # hierarchical_indices: bottom-up
                     check_level_indices = self.octree.hierarchical_indices[check_level] 
-                    # print(check_level_indices)
                     # if index is -1 for the level, then means the point is not valid under this level
                     mask_mc = check_level_indices >= 0
-                    # print(mask_mc.shape)
                     # all should be true (all the corner should be valid)
-                    mask_mc = torch.all(mask_mc, dim=1)
-                    mc_mask[head:tail] = mask_mc.detach().cpu().numpy()
-                    # but for scimage's marching cubes, the top right corner's mask should also be true to conduct marching cubes
+                    mc_mask = torch.all(mask_mc, dim=1).detach().cpu().numpy()
 
         return sdf_pred, sem_pred, mc_mask
 

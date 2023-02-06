@@ -245,6 +245,10 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
   <img src="https://user-images.githubusercontent.com/34207278/216335116-45273ef9-adb8-4f03-9e58-c5ca60b03081.png" width="70%" />
 </p>
 
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/34207278/217082027-efe272bb-ff6e-49b3-bb69-6d0a32c64a45.png" width="70%" />
+</p>
+
 **Newer College**
 
 <p align="center">
@@ -257,11 +261,6 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
   <img src="https://user-images.githubusercontent.com/34207278/212333973-ad1a0c14-550f-4266-902f-08c33f9f79c1.png" width="70%" />
 </p>
 
-**RGB-D**
-
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/34207278/206718688-a8bfb786-6439-435b-a225-c596aef9ab64.png" width="70%" />
-</p>
 
 **Wild Place Forests**
 
@@ -269,10 +268,23 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
   <img src="https://user-images.githubusercontent.com/34207278/207911217-c27a52c9-7233-4db9-a1fd-3487e59e6529.png" width="70%" />
 </p>
 
-**Office**
+
+**IPB Office**
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/34207278/216360654-9b0a8bda-6a98-4db1-aa25-1c58080a4585.png" width="70%" />
+</p>
+
+**ICL Living Room**
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/34207278/206718688-a8bfb786-6439-435b-a225-c596aef9ab64.png" width="70%" />
+</p>
+
+**Replica**
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/34207278/217082679-319d220a-de1f-4f30-ac14-438b4fe8942a.png" width="70%" />
 </p>
 
 

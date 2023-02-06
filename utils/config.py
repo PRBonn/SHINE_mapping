@@ -185,7 +185,7 @@ class SHINEConfig:
         self.mc_with_octree: bool = True # conducting marching cubes reconstruction within a certain level of the octree or within the axis-aligned bounding box of the whole map
         self.mc_query_level: int = 8
         self.mc_vis_level: int = 1 # masked the marching cubes for level higher than this
-        self.mc_mask_on: bool = False # use mask for marching cubes to avoid the artifacts
+        self.mc_mask_on: bool = True # use mask for marching cubes to avoid the artifacts
         
         self.infer_bs: int = 4096
         self.occ_binary_mc: bool = False
@@ -335,12 +335,9 @@ class SHINEConfig:
         self.wandb_vis_on = config_args["eval"][
             "wandb_vis_on"
         ]  # use weight and bias to monitor the experiment or not
-        # self.eval_on = config_args["eval"][
-        #     "eval_on"
-        # ]  # evaluate the model on the ground truth point cloud or not
-        # self.eval_freq_iters = config_args["eval"][
-        #     "eval_freq_iters"
-        # ]  # frequency for evaluation on ground truth point cloud for batch mode (per x iters)
+        self.o3d_vis_on = config_args["eval"][
+            "o3d_vis_on"
+        ] # turn on the open3d visualizer to visualize the mapping progress or not
         self.vis_freq_iters = config_args["eval"][
             "vis_freq_iters"
         ]  # frequency for mesh reconstruction for batch mode (per x iters)
@@ -350,15 +347,18 @@ class SHINEConfig:
         self.mesh_freq_frame = config_args["eval"][
             "mesh_freq_frame"
         ]  # frequency for mesh reconstruction for incremental mode (per x frame)
-        # self.pad_voxel = config_args["eval"]["pad_voxel"]
+        self.mc_with_octree = config_args["eval"][
+            "mc_with_octree"
+        ]  # using octree to narrow down the region that needs the sdf query so as to boost the efficieny
+        # if false, we query all the positions within the map bounding box
         self.mc_res_m = config_args["eval"][
             "mc_res_m"
         ]  # marching cubes grid sampling interval (unit: m)
         self.mc_vis_level = config_args["eval"][
             "mc_vis_level"
         ]
-        # using masked marching cubes according to the octree or not
-        self.mc_mask_on = config_args["eval"]["mc_mask_on"]
+        # self.mc_mask_on = config_args["eval"]["mc_mask_on"] # using masked marching cubes according to the octree or not, default true
+        
         self.save_map = config_args["eval"][
             "save_map"
         ] 

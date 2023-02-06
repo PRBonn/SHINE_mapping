@@ -162,6 +162,7 @@ def run_shine_mapping_incremental():
         
         # reconstruction by marching cubes
         if processed_frame == 0 or (processed_frame+1) % config.mesh_freq_frame == 0:
+            print("Begin mesh reconstruction from the implicit map")       
             vis_mesh = True 
             # print("Begin reconstruction from implicit mapn")               
             mesh_path = run_path + '/mesh/mesh_frame_' + str(frame_id+1) + ".ply"

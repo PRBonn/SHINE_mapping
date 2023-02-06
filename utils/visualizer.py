@@ -35,7 +35,7 @@ class MapVisualizer():
 
         # Create data
         self.scan = o3d.geometry.PointCloud()
-        self.frame_axis_len = 0.6
+        self.frame_axis_len = 0.5
         self.frame = o3d.geometry.TriangleMesh()
         self.mesh = o3d.geometry.TriangleMesh()
 

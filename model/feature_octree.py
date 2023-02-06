@@ -1,19 +1,15 @@
 import torch
-import torch.nn.functional as F
 import torch.nn as nn
 
-import math
 import time
 from tqdm import tqdm
 import kaolin as kal
 import numpy as np
-from torch.autograd import grad
 
 from functools import partial
 from collections import defaultdict
 
 from utils.config import SHINEConfig
-from utils.loss import sdf_bce_loss
 
 # TODO: polish the codes
 

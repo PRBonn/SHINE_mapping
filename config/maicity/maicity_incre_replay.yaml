@@ -53,10 +53,11 @@ optimizer:
   weight_decay: 0 # l2 regularization
 eval:
   wandb_vis_on: False # log to wandb or not
+  o3d_vis_on: True # visualize the mapping or not
   vis_freq_iters: 0 
   save_freq_iters: 0 # save the model and octree every x iterations
   mesh_freq_frame: 5 # reconstruct the mesh every x frames
   mc_res_m: 0.2 # reconstruction marching cubes resolution
-  mc_mask_on: True
+  mc_with_octree: False # querying sdf in the map bbx
   mc_vis_level: 2 
   save_map: False # save the sdf map or not

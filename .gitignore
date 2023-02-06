@@ -6,3 +6,5 @@ __pycache__/
 *.ply
 *.bin
 *.pth
+./experiments/
+./data/
