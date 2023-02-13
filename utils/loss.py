@@ -92,9 +92,8 @@ def batch_ray_rendering_loss(x, y, d_meas, neus_on=True):  # for all rays in a b
     sort_y = torch.gather(y, 1, indices)  # for each row
 
     if neus_on:
-        neus_alpha = -(sort_y[:, 0:-1] - sort_y[:, 1:]) / (
-            sort_y[:, 0:-1] + 1e-10
-        )  # avoid dividing by 0 (nan)
+        neus_alpha = (sort_y[:, 1:] - sort_y[:, 0:-1]) / ( 1. - sort_y[:, 0:-1] + 1e-10)
+        # avoid dividing by 0 (nan)
         # print(neus_alpha)
         alpha = torch.clamp(neus_alpha, min=0.0, max=1.0)
     else:

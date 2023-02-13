@@ -41,7 +41,7 @@ class Decoder(nn.Module):
         output = self.sdf(feature)
         return output
 
-    # predict the sdf
+    # predict the sdf (opposite sign to the actual sdf)
     def sdf(self, sum_features):
         for k, l in enumerate(self.layers):
             if k == 0:
