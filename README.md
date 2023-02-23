@@ -86,9 +86,9 @@ pip install torch==1.12.1+cu116 torchvision==0.13.1+cu116 torchaudio==0.12.1 --e
 ```
 
 Kaolin now supports installation with wheels. For example, to install kaolin 0.13.0 over torch 1.12.1 and cuda 11.6:
-`
+```
 pip install kaolin==0.13.0 -f https://nvidia-kaolin.s3.us-east-2.amazonaws.com/torch-1.12.1_cu116.html
-`
+```
 
 <details>
   <summary>[Or you can build kaolin by yourself (click to expand)]</summary>
@@ -106,7 +106,8 @@ python setup.py develop
 ```
 
 Use ```python -c "import kaolin; print(kaolin.__version__)"``` to check if kaolin is successfully installed.
-<details>
+</details>
+
 
 ### 4. Install the other requirements
 ```
