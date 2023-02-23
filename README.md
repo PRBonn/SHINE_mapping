@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/34207278/194295874-ccf02ed0-ad10-4451-acd2-e70001737ecf.png" width="90%" />
+  <img src="https://user-images.githubusercontent.com/8968747/219639320-d595ebb9-030a-41a4-81e2-8ab6cc4efef8.png" width="90%" />
 </p>
 
 Incremental Mapping | Reconstruction Results |
