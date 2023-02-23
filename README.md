@@ -78,18 +78,26 @@ conda activate shine
 ```
 ### 3. Install the key requirement kaolin
 
-Follow the [instructions](https://kaolin.readthedocs.io/en/latest/notes/installation.html) to install [kaolin](https://kaolin.readthedocs.io/en/latest/index.html). Firstly, clone kaolin to local directory:
-
-```
-git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
-cd kaolin
-```
-
 Kaolin depends on Pytorch (>= 1.8, <= 1.12.1). Please install the corresponding Pytorch for your CUDA version (can be checked by ```nvcc --version```). You can find the installation commands [here](https://pytorch.org/get-started/previous-versions/).
 
 For example, for CUDA version >=11.6, you can use:
 ```
 pip install torch==1.12.1+cu116 torchvision==0.13.1+cu116 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu116
+```
+
+Kaolin now supports installation with wheels. For example, to install kaolin 0.13.0 over torch 1.12.1 and cuda 11.3:
+`
+pip install kaolin==0.13.0 -f https://nvidia-kaolin.s3.us-east-2.amazonaws.com/torch-1.12.1_cu113.html
+`
+
+<details>
+  <summary>[Or you can build kaolin by yourself (click to expand)]</summary>
+
+Follow the [instructions](https://kaolin.readthedocs.io/en/latest/notes/installation.html) to install [kaolin](https://kaolin.readthedocs.io/en/latest/index.html). Firstly, clone kaolin to local directory:
+
+```
+git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
+cd kaolin
 ```
 
 Then install kaolin by:
@@ -98,12 +106,11 @@ python setup.py develop
 ```
 
 Use ```python -c "import kaolin; print(kaolin.__version__)"``` to check if kaolin is successfully installed.
-
+<details>
 
 ### 4. Install the other requirements
 ```
-pip install open3d wandb tqdm natsort
-conda install scikit-image
+pip install open3d scikit-image wandb tqdm natsort 
 ```
 
 ----
