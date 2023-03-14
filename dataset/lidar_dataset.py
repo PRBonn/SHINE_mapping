@@ -110,6 +110,7 @@ class LiDARDataset(Dataset):
         self.weight_pool = torch.empty((0), device=self.pool_device, dtype=self.dtype)
         self.sample_depth_pool = torch.empty((0), device=self.pool_device, dtype=self.dtype)
         self.ray_depth_pool = torch.empty((0), device=self.pool_device, dtype=self.dtype)
+        self.origin_pool = torch.empty((0, 3), device=self.pool_device, dtype=self.dtype)
 
     def process_frame(self, frame_id, incremental_on = False):
 
@@ -213,6 +214,8 @@ class LiDARDataset(Dataset):
         (coord, sdf_label, normal_label, sem_label, weight, sample_depth, ray_depth) = \
             self.sampler.sample(frame_pc_s_torch, frame_origin_torch, \
             frame_normal_torch, frame_label_torch)
+        
+        origin_repeat = frame_origin_torch.repeat(coord.shape[0], 1)
 
         # update feature octree
         if self.config.octree_from_surface_samples:
@@ -232,7 +235,8 @@ class LiDARDataset(Dataset):
             # self.color_label_pool = color_label
             self.weight_pool = weight
             self.sample_depth_pool = sample_depth
-            self.ray_depth_pool = ray_depth        
+            self.ray_depth_pool = ray_depth
+            self.origin_pool = origin_repeat
         else: # batch processing
             self.coord_pool = torch.cat((self.coord_pool, coord.to(self.pool_device)), 0)            
             self.weight_pool = torch.cat((self.weight_pool, weight.to(self.pool_device)), 0)
@@ -241,6 +245,7 @@ class LiDARDataset(Dataset):
                 self.ray_depth_pool = torch.cat((self.ray_depth_pool, ray_depth.to(self.pool_device)), 0)
             else:
                 self.sdf_label_pool = torch.cat((self.sdf_label_pool, sdf_label.to(self.pool_device)), 0)
+                self.origin_pool = torch.cat((self.origin_pool, origin_repeat.to(self.pool_device)), 0)
 
             if normal_label is not None:
                 self.normal_label_pool = torch.cat((self.normal_label_pool, normal_label.to(self.pool_device)), 0)
@@ -404,7 +409,8 @@ class LiDARDataset(Dataset):
             index = torch.randint(0, train_sample_count, (self.config.bs,), device=self.pool_device)
             coord = self.coord_pool[index, :].to(self.device)
             sdf_label = self.sdf_label_pool[index].to(self.device)
-            
+            origin = self.origin_pool[index].to(self.device)
+
             if self.normal_label_pool is not None:
                 normal_label = self.normal_label_pool[index, :].to(self.device)
             else: 
@@ -417,5 +423,5 @@ class LiDARDataset(Dataset):
 
             weight = self.weight_pool[index].to(self.device)
 
-            return coord, sdf_label, normal_label, sem_label, weight
+            return coord, sdf_label, origin, normal_label, sem_label, weight
 

@@ -231,7 +231,7 @@ class Mesher():
         
         return mesh
 
-    def filter_isolated_vertices(self, mesh, filter_cluster_min_tri = 100):
+    def filter_isolated_vertices(self, mesh, filter_cluster_min_tri = 300):
         # print("Cluster connected triangles")
         triangle_clusters, cluster_n_triangles, _ = (mesh.cluster_connected_triangles())
         triangle_clusters = np.asarray(triangle_clusters)
@@ -272,7 +272,7 @@ class Mesher():
             mesh.compute_vertex_normals()
         
         if filter_isolated_mesh:
-            mesh = self.filter_isolated_vertices(mesh)
+            mesh = self.filter_isolated_vertices(mesh, self.config.min_cluster_vertices)
 
         # global transform (to world coordinate system) before output
         mesh.transform(self.global_transform)

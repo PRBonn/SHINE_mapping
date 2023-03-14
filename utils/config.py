@@ -142,6 +142,8 @@ class SHINEConfig:
         self.sigma_sigmoid_m: float = 0.1
         self.sigma_scale_constant: float = 0.0 # scale factor adding to the constant sigma value (linear with the distance) [deprecated]
         self.logistic_gaussian_ratio: float = 0.55
+
+        self.proj_correction_on: bool = False # conduct projective distance correction based on the sdf gradient or not
         
         self.predict_sdf: bool = False
         self.neus_loss_on: bool = False  # use the unbiased and occlusion-aware weights for differentiable rendering as introduced in NEUS
@@ -152,7 +154,13 @@ class SHINEConfig:
         self.normal_loss_on: bool = False
         self.weight_n: float = 0.01
         self.ekional_loss_on: bool = False
-        self.weight_e: float = 1e-4
+        self.weight_e: float = 0.1
+        # TODO: add to config file
+        self.consistency_loss_on: bool = False
+        self.weight_c: float = 1.0
+        self.consistency_count: int = 1000
+        self.consistency_range: float = 0.1 # the neighborhood points would be randomly select within the radius of xxx m
+        
         self.history_weight: float = 1.0
 
         self.weight_s: float = 1.0  # weight for semantic classification loss
@@ -186,6 +194,8 @@ class SHINEConfig:
         self.mc_query_level: int = 8
         self.mc_vis_level: int = 1 # masked the marching cubes for level higher than this
         self.mc_mask_on: bool = True # use mask for marching cubes to avoid the artifacts
+
+        self.min_cluster_vertices: int = 300 # if a connected's vertices number is smaller than this value, it would get filtered
         
         self.infer_bs: int = 4096
         self.occ_binary_mc: bool = False
