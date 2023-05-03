@@ -255,19 +255,19 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
 </p>
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/34207278/217082027-efe272bb-ff6e-49b3-bb69-6d0a32c64a45.png" width="70%" />
+  <img src="https://user-images.githubusercontent.com/34207278/235924403-1d1157f5-26c4-443e-b3dc-c87ee13c3e61.gif" width="70%" />
 </p>
 
 **Newer College**
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/34207278/206719372-477f1a90-e2b1-44ac-a56e-22e8e5810147.png" width="70%" />
+  <img src="https://user-images.githubusercontent.com/34207278/235920727-0de6bdfa-999b-4e66-a4ec-c8a0910b5a74.gif" width="70%" />
 </p>
 
 **Apollo**
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/34207278/212333973-ad1a0c14-550f-4266-902f-08c33f9f79c1.png" width="70%" />
+  <img src="https://user-images.githubusercontent.com/34207278/235922691-d4e8cc0e-b85f-4542-9eaf-821bf26cc966.png" width="70%" />
 </p>
 
 
@@ -284,16 +284,17 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
   <img src="https://user-images.githubusercontent.com/34207278/216360654-9b0a8bda-6a98-4db1-aa25-1c58080a4585.png" width="70%" />
 </p>
 
-**ICL Living Room**
-
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/34207278/206718688-a8bfb786-6439-435b-a225-c596aef9ab64.png" width="70%" />
-</p>
-
 **Replica**
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/34207278/217082679-319d220a-de1f-4f30-ac14-438b4fe8942a.png" width="70%" />
+  <img src="https://user-images.githubusercontent.com/34207278/235921915-49faa15c-4120-4383-953b-e0d41a4caa32.gif" width="70%" />
+</p>
+
+
+**ICL Living Room**
+
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/34207278/235922527-a39f6e1c-443b-462e-842d-f33e0e5716be.png" width="70%" />
 </p>
 
 
