@@ -17,8 +17,9 @@
 </p>
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/8968747/219639320-d595ebb9-030a-41a4-81e2-8ab6cc4efef8.png" width="90%" />
+  <img src="https://user-images.githubusercontent.com/34207278/235914656-c56cd71f-1b31-44f7-a60d-3de4d77d76b6.png" width="100%" />
 </p>
+
 
 Incremental Mapping | Reconstruction Results |
 :-: | :-: |
@@ -325,16 +326,20 @@ As mentioned in the paper, we also compute a fairer accuracy metric using the gr
 
 3. SHINE Mapping supports both the offline batch mapping and the incremental sequential mapping. For incremental mapping, one can either load a fixed pre-trained decoder from the batching mapping on a similar dataset (set `load_model: True`) or train the decoder for `freeze_after_frame` frames on-the-fly and then freeze it afterwards (set `load_model: False`). The first option would lead to better mapping performance.
 
-4. You can use the `mc_vis_level` parameter to have a trade-off between the scene completion and the exact measurement accuracy. This parameter indicate at which level of the octree the marching cubes reconstruction would be conducted. The larger the value of `mc_vis_level` (but not larger than `tree_level_feat`), the more scene completion ability you would gain (but also some artifacts such as a double wall may appear). And with the small value, SHINE mapping would only reconstruct the part with actual measurements without filling the holes. The safest way to avoid the holes on the ground is to set `mc_mask_on: False` to disable the masking for marching cubes.
+4. You can use the `mc_vis_level` parameter to have a trade-off between the scene completion and the exact measurement accuracy. This parameter indicate at which level of the octree the marching cubes reconstruction would be conducted. The larger the value of `mc_vis_level` (but not larger than `tree_level_feat`), the more scene completion ability you would gain (but also some artifacts such as a double wall may appear). And with the small value, SHINE mapping would only reconstruct the part with actual measurements without filling the holes. The safest way to avoid the holes on the ground is to set `mc_mask_on: False` to disable the masking for marching cubes. By turning on the `mc_with_octree` option, you can achieve a faster marching cubes reconstruction only in the region within the octree nodes. 
 
-5. The incremental mapping with regularization strategy (setting `continual_learning_reg: True`) can achieve incremental neural mapping without storing an ever-growing data pool which would be a burden for the memory. The coefficient `lambda_forget` needs to be fine-tuned under different feature octree and point sampling settings. The recommended value is from `1e5` to `1e8`. A pre-trained decoder is also recommended to be loaded during incremental mapping with regularization for better performance.
+5. The incremental mapping with regularization strategy (setting `continual_learning_reg: True`) can achieve incremental neural mapping without storing an ever-growing data pool which would be a burden for the memory. The coefficient `lambda_forget` needs to be fine-tuned under different feature octree and point sampling settings. The recommended value is from `1e5` to `1e8`. A pre-trained decoder is also recommended to be loaded during incremental mapping with regularization for better performance. 
+
+6. We also provide an option to conduct incremental mapping with replay strategy in a local sliding window. You can turn this on by setting `window_replay_on: True` with a valid `window_radius_m` indicating the size of the sliding window.
+
+7. It's also possible to incoporate semantic information in our SHINE-Mapping framework. You may set `semantic_on = True` in the `utils/config.py` file to enable semantic mapping and also provide the semantic supervision by setting the `label_path` in the config file.
 
 </details>
 
 ----
 
 ## Citation
-If you use SHINE Mapping for any academic work, please cite our original paper.
+If you use SHINE Mapping for any academic work, please cite our [original paper](https://www.ipb.uni-bonn.de/wp-content/papercite-data/pdf/zhong2023icra.pdf).
 ```
 @inproceedings{zhong2023icra,
   title={SHINE-Mapping: Large-Scale 3D Mapping Using Sparse Hierarchical Implicit NEural Representations},
@@ -353,7 +358,7 @@ If you have any questions, please contact:
 ## Acknowledgment
 This work has partially been funded by the European Union’s HORIZON programme under grant agreement No 101070405 (DigiForest) and grant agreement No 101017008 (Harmony).
 
-Additional, we thanks greatly for the authors of the following opensource projects:
+Additional, we thank greatly for the authors of the following opensource projects:
 
 - [NGLOD](https://github.com/nv-tlabs/nglod) (octree based hierarchical feature structure built based on [kaolin](https://kaolin.readthedocs.io/en/latest/index.html)) 
 - [VDBFusion](https://github.com/PRBonn/vdbfusion) (comparison baseline)
