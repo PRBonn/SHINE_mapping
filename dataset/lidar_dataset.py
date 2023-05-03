@@ -18,8 +18,10 @@ from utils.tracker import Tracker
 from model.feature_octree import FeatureOctree
 
 
+# better to write a new dataloader for RGB-D inputs, not always converting them to KITTI Lidar format
+
 class LiDARDataset(Dataset):
-    def __init__(self, config: SHINEConfig, octree: FeatureOctree, tracker: Tracker = None) -> None:
+    def __init__(self, config: SHINEConfig, octree: FeatureOctree = None, tracker: Tracker = None) -> None:
 
         super().__init__()
 
@@ -110,6 +112,8 @@ class LiDARDataset(Dataset):
         self.weight_pool = torch.empty((0), device=self.pool_device, dtype=self.dtype)
         self.sample_depth_pool = torch.empty((0), device=self.pool_device, dtype=self.dtype)
         self.ray_depth_pool = torch.empty((0), device=self.pool_device, dtype=self.dtype)
+        self.origin_pool = torch.empty((0, 3), device=self.pool_device, dtype=self.dtype)
+        self.time_pool = torch.empty((0), device=self.pool_device, dtype=self.dtype)
 
     def process_frame(self, frame_id, incremental_on = False):
 
@@ -213,18 +217,23 @@ class LiDARDataset(Dataset):
         (coord, sdf_label, normal_label, sem_label, weight, sample_depth, ray_depth) = \
             self.sampler.sample(frame_pc_s_torch, frame_origin_torch, \
             frame_normal_torch, frame_label_torch)
+        
+        origin_repeat = frame_origin_torch.repeat(coord.shape[0], 1)
+        time_repeat = torch.tensor(frame_id, dtype=self.dtype, device=self.pool_device).repeat(coord.shape[0])
 
         # update feature octree
-        if self.config.octree_from_surface_samples:
-            # update with the sampled surface points
-            self.octree.update(coord[weight > 0, :].to(self.device), incremental_on)
-        else:
-            # update with the original points
-            self.octree.update(frame_pc_s_torch.to(self.device), incremental_on)  
+        if self.octree is not None:
+            if self.config.octree_from_surface_samples:
+                # update with the sampled surface points
+                self.octree.update(coord[weight > 0, :].to(self.device), incremental_on)
+            else:
+                # update with the original points
+                self.octree.update(frame_pc_s_torch.to(self.device), incremental_on)  
 
         # get the data pool ready for training
+        
         # ray-wise samples order
-        if incremental_on:
+        if incremental_on: # for the incremental mapping with feature update regularization
             self.coord_pool = coord
             self.sdf_label_pool = sdf_label
             self.normal_label_pool = normal_label
@@ -232,8 +241,38 @@ class LiDARDataset(Dataset):
             # self.color_label_pool = color_label
             self.weight_pool = weight
             self.sample_depth_pool = sample_depth
-            self.ray_depth_pool = ray_depth        
-        else: # batch processing
+            self.ray_depth_pool = ray_depth
+            self.origin_pool = origin_repeat
+            self.time_pool = time_repeat
+        
+        else: # batch processing    
+            # using a sliding window for the data pool
+            if self.config.window_replay_on: 
+                pool_relative_dist = (self.coord_pool - frame_origin_torch).norm(2, dim=-1)
+                filter_mask = pool_relative_dist < self.config.window_radius * self.config.scale
+
+                # and also have two filter mask options (delta frame, distance)
+                # print(filter_mask)
+
+                self.coord_pool = self.coord_pool[filter_mask]
+                self.weight_pool = self.weight_pool[filter_mask]
+
+                # FIX ME for ray-wise sampling
+                # self.sample_depth_pool = self.sample_depth_pool[filter_mask]
+                # self.ray_depth_pool = self.ray_depth_pool[filter_mask]
+                
+                self.sdf_label_pool = self.sdf_label_pool[filter_mask]
+                self.origin_pool = self.origin_pool[filter_mask]
+                self.time_pool = self.time_pool[filter_mask]
+                
+                if normal_label is not None:
+                    self.normal_label_pool = self.normal_label_pool[filter_mask]
+                if sem_label is not None:
+                    self.sem_label_pool = self.sem_label_pool[filter_mask]
+            
+            # or we will simply use all the previous samples
+
+            # concat with current observations
             self.coord_pool = torch.cat((self.coord_pool, coord.to(self.pool_device)), 0)            
             self.weight_pool = torch.cat((self.weight_pool, weight.to(self.pool_device)), 0)
             if self.config.ray_loss:
@@ -241,6 +280,8 @@ class LiDARDataset(Dataset):
                 self.ray_depth_pool = torch.cat((self.ray_depth_pool, ray_depth.to(self.pool_device)), 0)
             else:
                 self.sdf_label_pool = torch.cat((self.sdf_label_pool, sdf_label.to(self.pool_device)), 0)
+                self.origin_pool = torch.cat((self.origin_pool, origin_repeat.to(self.pool_device)), 0)
+                self.time_pool = torch.cat((self.time_pool, time_repeat.to(self.pool_device)), 0)
 
             if normal_label is not None:
                 self.normal_label_pool = torch.cat((self.normal_label_pool, normal_label.to(self.pool_device)), 0)
@@ -404,7 +445,9 @@ class LiDARDataset(Dataset):
             index = torch.randint(0, train_sample_count, (self.config.bs,), device=self.pool_device)
             coord = self.coord_pool[index, :].to(self.device)
             sdf_label = self.sdf_label_pool[index].to(self.device)
-            
+            origin = self.origin_pool[index].to(self.device)
+            ts = self.time_pool[index].to(self.device) # frame number or the timestamp
+
             if self.normal_label_pool is not None:
                 normal_label = self.normal_label_pool[index, :].to(self.device)
             else: 
@@ -417,5 +460,5 @@ class LiDARDataset(Dataset):
 
             weight = self.weight_pool[index].to(self.device)
 
-            return coord, sdf_label, normal_label, sem_label, weight
+            return coord, sdf_label, origin, ts, normal_label, sem_label, weight
 

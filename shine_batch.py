@@ -1,5 +1,4 @@
 import sys
-import wandb
 import numpy as np
 from numpy.linalg import inv, norm
 from tqdm import tqdm
@@ -7,6 +6,7 @@ import wandb
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 
 
 from utils.config import SHINEConfig
@@ -35,7 +35,7 @@ def run_shine_mapping_batch():
     # initialize the feature octree
     octree = FeatureOctree(config)
     # initialize the mlp decoder
-    geo_mlp = Decoder(config, is_geo_encoder=True)
+    geo_mlp = Decoder(config, is_geo_encoder=True, is_time_conditioned=config.time_conditioned)
     sem_mlp = Decoder(config, is_geo_encoder=False)
 
     # load the decoder model
@@ -104,27 +104,56 @@ def run_shine_mapping_batch():
         if config.ray_loss: # loss computed based on each ray   
             coord, sample_depth, ray_depth, normal_label, sem_label, weight = dataset.get_batch()
         else: # loss computed based on each point sample  
-            coord, sdf_label, normal_label, sem_label, weight = dataset.get_batch()
+            coord, sdf_label, origin, ts, normal_label, sem_label, weight = dataset.get_batch()
 
-        if config.normal_loss_on or config.ekional_loss_on:
+        # print(ts)
+
+        if config.normal_loss_on or config.ekional_loss_on or config.proj_correction_on:
             coord.requires_grad_(True)
 
         T1 = get_time()
-        feature = octree.query_feature(coord) # interpolate and concat the hierachical grid features    
+        feature = octree.query_feature(coord) # interpolate and concat the hierachical grid features
+
         T2 = get_time()
         
-        pred = geo_mlp.sdf(feature) # predict the scaled sdf with the feature
+        if not config.time_conditioned:
+            pred = geo_mlp.sdf(feature) # predict the scaled sdf with the feature
+        else:
+            pred = geo_mlp.time_conditionded_sdf(feature, ts) # predict the scaled sdf with the feature
+
         if config.semantic_on:
             sem_pred = sem_mlp.sem_label_prob(feature) # TODO: add semantic rendering for ray loss
 
         T3 = get_time()
         
         surface_mask = weight > 0
+
+        # if config.normal_loss_on or config.ekional_loss_on:
+        # use non-projective distance, gradually refined
+        if config.normal_loss_on or config.ekional_loss_on or config.proj_correction_on:
+            g = get_gradient(coord, pred)*sigma_sigmoid
+            
+        if config.proj_correction_on:
+            cos = torch.abs(F.cosine_similarity(g, coord - origin))
+            cos[~surface_mask] = 1.0
+            sdf_label = sdf_label * cos
+
+        if config.consistency_loss_on:
+            near_index = torch.randint(0, coord.shape[0], (min(config.consistency_count,coord.shape[0]),), device=dev)
+            shift_scale = config.consistency_range * config.scale # 10 cm
+            random_shift = torch.rand_like(coord) * 2 * shift_scale - shift_scale
+            coord_near = coord + random_shift 
+            coord_near = coord_near[near_index, :] # only use a part of these coord to speed up
+            coord_near.requires_grad_(True)
+            feature_near = octree.query_feature(coord_near)
+            pred_near = geo_mlp.sdf(feature_near)
+            g_near = get_gradient(coord_near, pred_near)*sigma_sigmoid
+
         cur_loss = 0.
         # calculate the loss
         if config.ray_loss: # neural rendering loss       
-            pred = torch.sigmoid(pred/sigma_size) 
-            pred_ray = pred.reshape(config.bs, -1)
+            pred_occ = torch.sigmoid(pred/sigma_size) # as occ. prob.
+            pred_ray = pred_occ.reshape(config.bs, -1)
             sample_depth = sample_depth.reshape(config.bs, -1)
             if config.main_loss_type == "dr":
                 dr_loss = batch_ray_rendering_loss(sample_depth, pred_ray, ray_depth, neus_on=False)
@@ -141,13 +170,17 @@ def run_shine_mapping_batch():
                 sdf_loss = sdf_diff_loss(pred, sdf_label, weight, config.scale, l2_loss=True)
             cur_loss += sdf_loss
         
-        # optional loss (ekional, normal loss)
-        if config.normal_loss_on or config.ekional_loss_on:
-            g = get_gradient(coord, pred)*sigma_sigmoid
+        # optional loss (ekional, normal, gradient consistency loss)
         eikonal_loss = 0.
         if config.ekional_loss_on:
-            eikonal_loss = ((g[surface_mask].norm(2, dim=-1) - 1.0) ** 2).mean() # MSE with regards to 1  
+            eikonal_loss = ((1.0 - g[surface_mask].norm(2, dim=-1)) ** 2).mean() # MSE with regards to 1  
             cur_loss += config.weight_e * eikonal_loss
+
+        consistency_loss = 0.
+        if config.consistency_loss_on:
+            consistency_loss = (1.0 - F.cosine_similarity(g[near_index, :], g_near)).mean()
+            cur_loss += config.weight_c * consistency_loss
+        
         normal_loss = 0.
         if config.normal_loss_on:
             g_direction = g / g.norm(2, dim=-1)
@@ -175,7 +208,7 @@ def run_shine_mapping_batch():
             if config.ray_loss:
                 wandb_log_content = {'iter': iter, 'loss/total_loss': cur_loss, 'loss/render_loss': dr_loss, 'loss/eikonal_loss': eikonal_loss, 'loss/normal_loss': normal_loss, 'para/sigma': sigma_size} 
             else:
-                wandb_log_content = {'iter': iter, 'loss/total_loss': cur_loss, 'loss/sdf_loss': sdf_loss, 'loss/eikonal_loss': eikonal_loss, 'loss/normal_loss': normal_loss, 'loss/sem_loss': sem_loss} 
+                wandb_log_content = {'iter': iter, 'loss/total_loss': cur_loss, 'loss/sdf_loss': sdf_loss, 'loss/eikonal_loss': eikonal_loss, 'loss/normal_loss': normal_loss, 'loss/consistency_loss': consistency_loss, 'loss/sem_loss': sem_loss} 
             wandb_log_content['timing(s)/load'] = T1 - T0
             wandb_log_content['timing(s)/get_indices'] = T2 - T1
             wandb_log_content['timing(s)/inference'] = T3 - T2
@@ -193,17 +226,37 @@ def run_shine_mapping_batch():
 
         # reconstruction by marching cubes
         if (((iter+1) % config.vis_freq_iters) == 0 and iter > 0): 
-            print("Begin mesh reconstruction from the implicit map")               
-            mesh_path = run_path + '/mesh/mesh_iter_' + str(iter+1) + ".ply"
-            map_path = run_path + '/map/sdf_map_iter_' + str(iter+1) + ".ply"
-            if config.mc_with_octree: # default
-                cur_mesh = mesher.recon_octree_mesh(config.mc_query_level, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+            print("Begin mesh reconstruction from the implicit map")    
+            if not config.time_conditioned:           
+                mesh_path = run_path + '/mesh/mesh_iter_' + str(iter+1) + ".ply"
+                map_path = run_path + '/map/sdf_map_iter_' + str(iter+1) + ".ply"
+                if config.mc_with_octree: # default
+                    cur_mesh = mesher.recon_octree_mesh(config.mc_query_level, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+                else:
+                    cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+                
+                if config.o3d_vis_on:
+                    cur_mesh.transform(dataset.begin_pose_inv)
+                    vis.update_mesh(cur_mesh)
+
             else:
-                cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
-            
-            if config.o3d_vis_on:
-                cur_mesh.transform(dataset.begin_pose_inv)
-                vis.update_mesh(cur_mesh)
+                vis.stop()
+                for frame_id in tqdm(range(dataset.total_pc_count)):
+                    if (frame_id < config.begin_frame or frame_id > config.end_frame or \
+                        frame_id % 2 != 0):
+                        continue
+
+                    mesher.ts = frame_id
+                    mesh_path = run_path + '/mesh/mesh_iter_' + str(iter+1) + '_ts_' + str(frame_id) + ".ply"
+                    map_path = run_path + '/map/sdf_map_iter_' + str(iter+1) + '_ts_' + str(frame_id) + ".ply"
+                    if config.mc_with_octree: # default
+                        cur_mesh = mesher.recon_octree_mesh(config.mc_query_level, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+                    else:
+                        cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+
+                    if config.o3d_vis_on:
+                        cur_mesh.transform(dataset.begin_pose_inv)
+                        vis.update_mesh(cur_mesh)
 
     if config.o3d_vis_on:
         vis.stop()

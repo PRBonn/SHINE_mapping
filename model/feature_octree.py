@@ -9,9 +9,23 @@ import numpy as np
 from functools import partial
 from collections import defaultdict
 
+import multiprocessing
+
 from utils.config import SHINEConfig
 
 # TODO: polish the codes
+
+def get_dict_values(dictionary, keys, default=None):
+    return [dictionary.get(key, default) for key in keys]
+
+def parallel_get_dict_values(dictionary, key_list, default=None, processes=None):
+    if processes is None:
+        processes = multiprocessing.cpu_count()
+    chunk_size = len(key_list) // processes
+    chunks = [key_list[i:i+chunk_size] for i in range(0, len(key_list), chunk_size)]
+    with multiprocessing.Pool(processes=processes) as pool:
+        value_list = pool.starmap(get_dict_values, [(dictionary, keys, default) for keys in chunks])
+    return [v for values in value_list for v in values]
 
 class FeatureOctree(nn.Module):
 
@@ -36,8 +50,11 @@ class FeatureOctree(nn.Module):
         # Initialize the look up table for each level, each is a dictionary
         for l in range(self.max_level+1):
             self.corners_lookup_tables.append({})
-            self.nodes_lookup_tables.append({})
-
+            self.nodes_lookup_tables.append({}) # actually the same speed as below
+            # default_indices = [-1 for i in range(8)]
+            # nodes_dict = defaultdict(lambda:default_indices)
+            # self.nodes_lookup_tables.append(nodes_dict)
+            
         # Initialize the hierarchical grid feature list 
         if self.featured_level_num < 1:
             raise ValueError('No level with grid features!')
@@ -190,13 +207,18 @@ class FeatureOctree(nn.Module):
             features_last_row = [-1 for t in range(8)] # if not in the look up table, then assign all -1
             # look up the 8 corner nodes' unique indices for each 1d morton code in the look up table [nx8], the most time-consuming part 
             # [actually a kind of hashing realized by python dictionary]
-            indices_list = [self.nodes_lookup_tables[current_level].get(p,features_last_row) for p in points_morton]
+            
+            indices_list = [self.nodes_lookup_tables[current_level].get(p,features_last_row) for p in points_morton] 
+            # indices_list = [self.nodes_lookup_tables[current_level][p] for p in points_morton]  # actually the same speed as above when using the defaultdict
+            # indices_list = parallel_get_dict_values(self.nodes_lookup_tables[current_level], points_morton, features_last_row, 4) # can be sloved by paralle hashing without conflict (no, it's even slower)
+            
             # if p is not found in the key lists of cur_lookup_table, use features_last_row, 
             # which is the all-zero trashbin vector of the level's feature
             indices_torch = torch.tensor(indices_list, device=self.device) 
             self.hierarchical_indices.append(indices_torch) # l level {nx8}  # bottom-up
         
         return self.hierarchical_indices
+
 
     # get the hierachical-sumed interpolated feature at spatial points x
     def query_feature_with_indices(self, coord, hierarchical_indices):
@@ -216,7 +238,7 @@ class FeatureOctree(nn.Module):
     def query_feature(self, coord, faster = False):
         self.set_zero() # set the trashbin feature vector back to 0 after the feature update
         if faster:
-            indices = self.get_indices_fast(coord)
+            indices = self.get_indices_fast(coord) # it would only be faster when the input coords have a lot share the same morton code
         else:
             indices = self.get_indices(coord)
         features = self.query_feature_with_indices(coord, indices)

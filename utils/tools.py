@@ -78,6 +78,39 @@ def setup_optimizer(config: SHINEConfig, octree_feat, mlp_geo_param, mlp_sem_par
         opt = optim.SGD(opt_setting, momentum=0.9)
     
     return opt
+
+
+def setup_optimizer_traj(config: SHINEConfig, octree_feat, mlp_geo_param, mlp_sem_param, mlp_traj_param, sigma_size) -> Optimizer:
+    lr_cur = config.lr
+    opt_setting = []
+    # weight_decay is for L2 regularization, only applied to MLP
+    if mlp_geo_param is not None:
+        mlp_geo_param_opt_dict = {'params': mlp_geo_param, 'lr': lr_cur, 'weight_decay': config.weight_decay} 
+        opt_setting.append(mlp_geo_param_opt_dict)
+    if config.semantic_on and mlp_sem_param is not None:
+        mlp_sem_param_opt_dict = {'params': mlp_sem_param, 'lr': lr_cur, 'weight_decay': config.weight_decay} 
+        opt_setting.append(mlp_sem_param_opt_dict)
+    if mlp_traj_param is not None:
+        mlp_traj_param_opt_dict = {'params': mlp_traj_param, 'lr': lr_cur, 'weight_decay': config.weight_decay} 
+        opt_setting.append(mlp_traj_param_opt_dict)
+
+    # feature octree
+    for i in range(config.tree_level_feat):
+        # try to also add L2 regularization on the feature octree (results not quite good)
+        feat_opt_dict = {'params': octree_feat[config.tree_level_feat-i-1], 'lr': lr_cur} 
+        lr_cur *= config.lr_level_reduce_ratio
+        opt_setting.append(feat_opt_dict)
+    # make sigma also learnable for differentiable rendering (but not for our method)
+    if config.ray_loss:
+        sigma_opt_dict = {'params': sigma_size, 'lr': config.lr}
+        opt_setting.append(sigma_opt_dict)
+    
+    if config.opt_adam:
+        opt = optim.Adam(opt_setting, betas=(0.9,0.99), eps = config.adam_eps) 
+    else:
+        opt = optim.SGD(opt_setting, momentum=0.9)
+    
+    return opt
     
 
 # set up weight and bias

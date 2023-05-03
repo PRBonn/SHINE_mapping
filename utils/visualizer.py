@@ -35,7 +35,7 @@ class MapVisualizer():
 
         # Create data
         self.scan = o3d.geometry.PointCloud()
-        self.frame_axis_len = 0.5
+        self.frame_axis_len = 0.000001 # 0.5
         self.frame = o3d.geometry.TriangleMesh()
         self.mesh = o3d.geometry.TriangleMesh()
 
@@ -69,6 +69,11 @@ class MapVisualizer():
         self.update_view()
         self.pause_view()
 
+    def update_pointcloud(self, scan):
+        self._update_pointcloud(scan)
+        self.update_view()
+        self.pause_view()
+
     def update_mesh(self, mesh):
         self._update_mesh(mesh)
         self.update_view()
@@ -93,7 +98,7 @@ class MapVisualizer():
         self.vis.add_geometry(self.frame)
         self.vis.add_geometry(self.mesh)
         self._set_white_background(self.vis)
-        self.vis.get_render_option().point_size = 3
+        self.vis.get_render_option().point_size = 2
         self.vis.get_render_option().light_on = True
         print(100 * "*")
         print(f"{w_name} initialized. Press [SPACE] to pause/start, [N] to step, [ESC] to exit.")
@@ -141,6 +146,20 @@ class MapVisualizer():
             self.vis.remove_geometry(self.mesh, self.reset_bounding_box)
             self.mesh = mesh
             self.vis.add_geometry(self.mesh, self.reset_bounding_box)
+
+            if self.reset_bounding_box:
+                self.vis.reset_view_point(True)
+                self.reset_bounding_box = False
+
+    def _update_pointcloud(self, scan):
+        if scan is not None:
+            self.vis.remove_geometry(self.scan, self.reset_bounding_box)
+            self.scan = scan
+            self.vis.add_geometry(self.scan, self.reset_bounding_box)
+
+            if self.reset_bounding_box:
+                self.vis.reset_view_point(True)
+                self.reset_bounding_box = False
 
     def _update_geometries(self, scan, pose, mesh = None):
         # Scan (toggled by "F")

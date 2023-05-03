@@ -22,7 +22,7 @@ sampler:
   surface_sample_range_m: 0.05
   surface_sample_n: 3
   free_sample_begin_ratio: 0.5
-  free_sample_end_dist: 0.3
+  free_sample_end_dist_m: 0.3
   free_sample_n: 3
 octree:
   leaf_vox_size: 0.02
@@ -44,8 +44,10 @@ loss:
   ekional_loss_on: False
   weight_e: 0.1
 continual:
-  continual_learning_reg: False
-  lambda_forget: 0
+  continual_learning_reg: False # using incremental mapping with regularization
+  lambda_forget: 0 
+  window_replay_on: False # replay within the sliding window
+  window_radius_m: 0
 optimizer:
   iters: 20000
   batch_size: 4096

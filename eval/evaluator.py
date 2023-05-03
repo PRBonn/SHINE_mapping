@@ -6,10 +6,15 @@ dataset_name = "maicity_01_"
 
 # ground truth point cloud (or mesh) file
 # (optional masked by the intersection part of all the compared method)
-gt_pcd_path = "xxx/maicity/01/gt_map_pc_mai.ply"
+gt_pcd_path = "/media/yuepan/DATA/1_data/mai_city/gt_map_pc_mai.ply"
+gt_pcd_path = "/media/yuepan/DATA/1_data/maicity/01/gt_map_pc_mai_1cm.ply"
+#gt_pcd_path = "/media/yuepan/DATA/1_data/maicity/01/gt_map_pc_mai_1cm_dense_part.ply"
 
-pred_mesh_path = "xxx/ours_xxx.ply"
-method_name = "ours_xxx"
+#pred_mesh_path = "/media/yuepan/DATA/1_data/maicity/01/maicity_new_10cm.ply"
+pred_mesh_path = "/media/yuepan/DATA/1_data/maicity/01/ours_fg10cm_mc5cm_50m_e_new.ply"
+
+method_name = "ours_new"
+
 
 # pred_mesh_path = "xxx/baseline/vdb_fusion_xxx.ply"
 # method_name = "vdb_fusion_xxx"
@@ -43,7 +48,7 @@ output_csv_path = base_output_folder + dataset_name + method_name + "_eval.csv"
 
 # evaluation parameters
 # For MaiCity
-down_sample_vox = 0.01
+down_sample_vox = 0.02
 dist_thre = 0.1
 truncation_dist_acc = 0.2 
 truncation_dist_com = 2.0
