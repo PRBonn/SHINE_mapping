@@ -2,6 +2,7 @@ setting:
   name: "kitti_batch"
   output_root: "./experiments/"
   pc_path: "xxx/data/kitti/sequences/00/velodyne"
+  label_path: "xxx/data/kitti/sequences/00/labels" # optional for semantic mapping
   pose_path: "xxx/data/kitti/sequences/00/poses.txt"
   calib_path: "xxx/data/kitti/sequences/00/calib.txt"
   load_model: False

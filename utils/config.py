@@ -223,8 +223,10 @@ class SHINEConfig:
         self.pc_path = config_args["setting"]["pc_path"] 
         self.pose_path = config_args["setting"]["pose_path"]
         self.calib_path = config_args["setting"]["calib_path"]
+
         # optional, when semantic shine mapping is on [semantic]
-        # self.label_path =  config_args["setting"]["label_path"] 
+        if self.semantic_on:
+            self.label_path =  config_args["setting"]["label_path"] 
 
         self.load_model = config_args["setting"]["load_model"]
         self.model_path = config_args["setting"]["model_path"]

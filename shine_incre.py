@@ -84,6 +84,8 @@ def run_shine_mapping_incremental():
         if processed_frame == config.freeze_after_frame: # freeze the decoder after certain frame
             print("Freeze the decoder")
             freeze_model(geo_mlp) # fixed the decoder
+            if config.semantic_on:
+                freeze_model(sem_mlp) # fixed the decoder
 
         T0 = get_time()
         # preprocess, sample data and update the octree

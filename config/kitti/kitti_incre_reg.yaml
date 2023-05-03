@@ -2,6 +2,7 @@ setting:
   name: "kitti_incre_reg"
   output_root: "./experiments/"
   pc_path: "xxx/data/kitti/sequences/00/velodyne"
+  label_path: "xxx/data/kitti/sequences/00/labels" # optional for semantic mapping
   pose_path: "xxx/data/kitti/sequences/00/poses.txt"
   calib_path: "xxx/data/kitti/sequences/00/calib.txt"
   load_model: False
@@ -61,5 +62,5 @@ eval:
   mesh_freq_frame: 5 # reconstruct the mesh every x frames
   mc_res_m: 0.1 # reconstruction marching cubes resolution
   mc_with_octree: True # querying sdf only in certain levels of the octree
-  mc_vis_level: 2
+  mc_vis_level: 1
   save_map: False # save the sdf map or not 
