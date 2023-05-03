@@ -227,17 +227,17 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
 
 </details>
 
-For incremental mapping with replay strategy, use:
+For incremental mapping with replay strategy (within a local bounding box), use:
 ```
 python shine_incre.py ./config/maicity/maicity_incre_replay.yaml
 ```
 
-An interactive visualizer would pop up. You can press `space` to pause and resume.
+An interactive visualizer would pop up if you set `o3d_vis_on: True` (by default) in the config file. You can press `space` to pause and resume. 
 
 <details>
   <summary>[Expected results (click to expand)]</summary>
 
-For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm leaf voxel size for the feature octree.
+For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm leaf voxel size for the feature octree here.
 
 <p align="center">
   <video src="https://user-images.githubusercontent.com/34207278/207639846-4f80e55c-7574-45a5-9987-9c7ec6eb20e5.mp4" width="50%" />
@@ -261,7 +261,7 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
 **Newer College**
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/34207278/235920727-0de6bdfa-999b-4e66-a4ec-c8a0910b5a74.gif" width="70%" />
+  <img src="https://user-images.githubusercontent.com/34207278/235925883-55a8230e-69b6-4ce0-a6c7-1f143de74504.gif" width="70%" />
 </p>
 
 **Apollo**
@@ -287,9 +287,8 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
 **Replica**
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/34207278/235921915-49faa15c-4120-4383-953b-e0d41a4caa32.gif" width="70%" />
+  <img src="https://user-images.githubusercontent.com/34207278/235925819-bc30934f-8df0-465c-b157-d2702022d06e.gif" width="70%" />
 </p>
-
 
 **ICL Living Room**
 
@@ -321,7 +320,7 @@ As mentioned in the paper, we also compute a fairer accuracy metric using the gr
 <details>
   <summary>[Details (click to expand)]</summary>
 
-1. You can play with different loss functions for SHINE Mapping. With the `ray_loss: False` option, the loss would be calculated from the sdf at each sample point. In this case, you can then select from `sdf_bce` (the proposed method), `sdf_l1` and  `sdf_l2` loss as the `main_loss_type`. With the `ray_loss: True` option, the loss would be calculated from each ray conatining multiple point samples as a depth rendering procedure. In this case,  you can select from `dr` and `dr_neus` as the `main_loss_type`. According to our experiments, using our proposed `sdf_bce` loss can achieve the best reconstruction efficiently. We can get a decent reconstruction of a scene with several hundred frames in just one minute. Additionally, you can set `ekional_loss_on` option to turn on/off the Ekional loss and use `weight_e` as its weight.
+1. You can play with different loss functions for SHINE Mapping. With the `ray_loss: False` option, the loss would be calculated from the sdf at each sample point. In this case, you can then select from `sdf_bce` (the proposed method), `sdf_l1` and  `sdf_l2` loss as the `main_loss_type`. With the `ray_loss: True` option, the loss would be calculated from each ray conatining multiple point samples as a depth rendering procedure. In this case,  you can select from `dr` and `dr_neus` as the `main_loss_type`. According to our experiments, using our proposed `sdf_bce` loss can achieve the best reconstruction efficiently. We can get a decent reconstruction of a scene with several hundred frames in just one minute. Additionally, you can use the `ekional_loss_on` option to turn on/off the Ekional loss and use `weight_e` as its weight.
 
 2. The feature octree is built mainly according to `leaf_vox_size`, `tree_level_world` and `tree_level_feat`. `leaf_vox_size` represents the size of the leaf voxel size in meter. `tree_level_world` and `tree_level_feat` represent the total tree level and the tree levels with latent feature codes, respectively. `tree_level_world` should be large enough to gurantee all the map data lies inside the cube with the size `leaf_vox_size**(tree_level_world+1)`.
 
