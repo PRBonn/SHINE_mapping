@@ -74,10 +74,10 @@ class SHINEConfig:
         self.semantic_on: bool = False # semantic shine mapping on [semantic]
         self.sem_class_count: int = 20 # semantic class count: 20 for semantic kitti
         self.sem_label_decimation: int = 1 # use only 1/${sem_label_decimation} of the available semantic labels for training (fitting)
-        self.filter_moving_object: bool = True
+        self.filter_moving_object: bool = False
 
         # frame-wise downsampling voxel size for the merged map point cloud (unit: m)
-        self.map_vox_down_m: float = 0.2 
+        self.map_vox_down_m: float = 0.05 # 0.2 
 
         # octree
         self.tree_level_world: int = (
@@ -94,12 +94,15 @@ class SHINEConfig:
         self.octree_from_surface_samples: bool = True  # Use all the surface samples or just the exact measurements to build the octree. If True may lead to larger memory, but is more robust while the reconstruction.
 
         # sampler
+        # spilt into 3 parts for sampling
         self.surface_sample_range_m: float = 0.5 # 
         self.surface_sample_n: int = 5
         self.free_sample_begin_ratio: float = 0.3
         # self.free_sample_end_ratio: float = 1.0 # deprecated
-        self.free_sample_end_dist: float = 0.5 # maximum distance after the surface (unit: m)
+        self.free_sample_end_dist_m: float = 0.5 # maximum distance after the surface (unit: m)
         self.free_sample_n: int = 2
+        self.clearance_dist_m: float = 0.3
+        self.clearance_sample_n: int = 0
 
         # space carving sampling related (deprecated)
         # self.carving_on = False
@@ -107,16 +110,15 @@ class SHINEConfig:
         # self.carving_stop_depth_m = 0.5
         # self.carving_inte_thre_m = 0.1
 
-        # continuous learning
+        # incremental mapping
         self.continual_learning_reg: bool = True
         # regularization based
         self.lambda_forget: float = 1e5
-        self.cal_importance_weight_down_rate: int = 5 # set it larger to save the consuming time
+        self.cal_importance_weight_down_rate: int = 10 # set it larger to save the consuming time
         
         # replay based
-        self.history_sample_ratio: int = 1
-        self.history_keep_ratio: int = 5
-        self.history_sample_res: float = 0.1
+        self.window_replay_on: bool = True
+        self.window_radius: float = 50.0 # unit: m
 
         # label
         self.occu_update_on: bool = False
@@ -155,6 +157,7 @@ class SHINEConfig:
         self.weight_n: float = 0.01
         self.ekional_loss_on: bool = False
         self.weight_e: float = 0.1
+
         # TODO: add to config file
         self.consistency_loss_on: bool = False
         self.weight_c: float = 1.0
@@ -164,6 +167,9 @@ class SHINEConfig:
         self.history_weight: float = 1.0
 
         self.weight_s: float = 1.0  # weight for semantic classification loss
+
+        # for dynamic reconstruction (TODO)
+        self.time_conditioned: bool = False
 
         # optimizer
         self.iters: int = 200
@@ -245,8 +251,11 @@ class SHINEConfig:
         self.surface_sample_range_m = config_args["sampler"]["surface_sample_range_m"]
         self.surface_sample_n = config_args["sampler"]["surface_sample_n"]
         self.free_sample_begin_ratio = config_args["sampler"]["free_sample_begin_ratio"]
-        self.free_sample_end_dist = config_args["sampler"]["free_sample_end_dist"]
+        self.free_sample_end_dist_m = config_args["sampler"]["free_sample_end_dist_m"]
         self.free_sample_n = config_args["sampler"]["free_sample_n"]
+        # optional split
+        # self.clearance_dist_m = config_args["sampler"]["clearance_dist_m"]
+        # self.clearance_sample_n = config_args["sampler"]["clearance_sample_n"]
 
         # label
         # self.occu_update_on = config_args["label"]["occu_update_on"]
@@ -284,6 +293,11 @@ class SHINEConfig:
         # freeze the decoder after runing for x frames (used for incremental mapping to avoid forgeting)
         self.freeze_after_frame = config_args["decoder"]["freeze_after_frame"]
 
+        # do the prediction conditioned on time (frame ID)
+        # self.time_conditioned = config_args["decoder"][ 
+        #     "time_conditioned"
+        # ]
+
         # loss
         self.ray_loss = config_args["loss"]["ray_loss"]
         self.main_loss_type = config_args["loss"]["main_loss_type"]
@@ -306,22 +320,25 @@ class SHINEConfig:
         self.weight_e = float(config_args["loss"]["weight_e"])
 
         
-        # continual learning
+        # continual learning (incremental)
         # using the regularization based continuous learning or the rehersal based continuous learning
         self.continual_learning_reg = config_args["continual"]["continual_learning_reg"]
         # the forgeting lambda for regularization based continual learning
         self.lambda_forget = float(
             config_args["continual"]["lambda_forget"]
-        ) 
-        
-        # # regularization based method
-        # # rehersal based method
+        )
+
+        # rehersal (replay) based method
+        self.window_replay_on = config_args["continual"]["window_replay_on"]
+        self.window_radius = config_args["continual"]["window_radius_m"]
+
         # self.history_sample_ratio = float(
         #     config_args["continuous"]["history_sample_ratio"]
         # )  # sample the history samples by a scale of the number of current samples
         # self.history_sample_res = config_args["continuous"][
         #     "history_sample_res"
         # ]  # the resolution of the kept history samples (unit: m)
+        
 
         # optimizer
         self.iters = config_args["optimizer"][
@@ -387,6 +404,9 @@ class SHINEConfig:
         self.calculate_world_scale()
         self.infer_bs = self.bs * 16
         self.mc_query_level = self.tree_level_world - self.tree_level_feat + 1
+
+        if self.window_radius <= 0:
+            self.window_radius = self.pc_radius * 2.0
     
     # calculate the scale for compressing the world into a [-1,1] kaolin cube
     def calculate_world_scale(self):

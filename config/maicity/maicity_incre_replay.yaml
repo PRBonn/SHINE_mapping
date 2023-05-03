@@ -22,7 +22,7 @@ sampler:
   surface_sample_range_m: 0.5
   surface_sample_n: 3
   free_sample_begin_ratio: 0.3
-  free_sample_end_dist: 0.8
+  free_sample_end_dist_m: 0.8
   free_sample_n: 3
 octree:
   leaf_vox_size: 0.5
@@ -44,8 +44,10 @@ loss:
   ekional_loss_on: False
   weight_e: 0.1
 continual:
-  continual_learning_reg: False
-  lambda_forget: 0
+  continual_learning_reg: False # using incremental mapping with regularization
+  lambda_forget: 0 
+  window_replay_on: True # replay within the sliding window
+  window_radius_m: 40.0
 optimizer:
   iters: 50  # iterations per frame
   batch_size: 4096
@@ -59,5 +61,5 @@ eval:
   mesh_freq_frame: 5 # reconstruct the mesh every x frames
   mc_res_m: 0.2 # reconstruction marching cubes resolution
   mc_with_octree: False # querying sdf in the map bbx
-  mc_vis_level: 2 
+  mc_vis_level: 1 
   save_map: False # save the sdf map or not

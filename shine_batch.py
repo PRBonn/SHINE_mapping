@@ -1,5 +1,4 @@
 import sys
-import wandb
 import numpy as np
 from numpy.linalg import inv, norm
 from tqdm import tqdm
@@ -36,7 +35,7 @@ def run_shine_mapping_batch():
     # initialize the feature octree
     octree = FeatureOctree(config)
     # initialize the mlp decoder
-    geo_mlp = Decoder(config, is_geo_encoder=True)
+    geo_mlp = Decoder(config, is_geo_encoder=True, is_time_conditioned=config.time_conditioned)
     sem_mlp = Decoder(config, is_geo_encoder=False)
 
     # load the decoder model
@@ -105,8 +104,10 @@ def run_shine_mapping_batch():
         if config.ray_loss: # loss computed based on each ray   
             coord, sample_depth, ray_depth, normal_label, sem_label, weight = dataset.get_batch()
         else: # loss computed based on each point sample  
-            coord, sdf_label, origin, normal_label, sem_label, weight = dataset.get_batch()
-        
+            coord, sdf_label, origin, ts, normal_label, sem_label, weight = dataset.get_batch()
+
+        # print(ts)
+
         if config.normal_loss_on or config.ekional_loss_on or config.proj_correction_on:
             coord.requires_grad_(True)
 
@@ -115,7 +116,10 @@ def run_shine_mapping_batch():
 
         T2 = get_time()
         
-        pred = geo_mlp.sdf(feature) # predict the scaled sdf with the feature
+        if not config.time_conditioned:
+            pred = geo_mlp.sdf(feature) # predict the scaled sdf with the feature
+        else:
+            pred = geo_mlp.time_conditionded_sdf(feature, ts) # predict the scaled sdf with the feature
 
         if config.semantic_on:
             sem_pred = sem_mlp.sem_label_prob(feature) # TODO: add semantic rendering for ray loss
@@ -166,7 +170,7 @@ def run_shine_mapping_batch():
                 sdf_loss = sdf_diff_loss(pred, sdf_label, weight, config.scale, l2_loss=True)
             cur_loss += sdf_loss
         
-        # optional loss (ekional, normal loss)
+        # optional loss (ekional, normal, gradient consistency loss)
         eikonal_loss = 0.
         if config.ekional_loss_on:
             eikonal_loss = ((1.0 - g[surface_mask].norm(2, dim=-1)) ** 2).mean() # MSE with regards to 1  
@@ -222,17 +226,37 @@ def run_shine_mapping_batch():
 
         # reconstruction by marching cubes
         if (((iter+1) % config.vis_freq_iters) == 0 and iter > 0): 
-            print("Begin mesh reconstruction from the implicit map")               
-            mesh_path = run_path + '/mesh/mesh_iter_' + str(iter+1) + ".ply"
-            map_path = run_path + '/map/sdf_map_iter_' + str(iter+1) + ".ply"
-            if config.mc_with_octree: # default
-                cur_mesh = mesher.recon_octree_mesh(config.mc_query_level, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+            print("Begin mesh reconstruction from the implicit map")    
+            if not config.time_conditioned:           
+                mesh_path = run_path + '/mesh/mesh_iter_' + str(iter+1) + ".ply"
+                map_path = run_path + '/map/sdf_map_iter_' + str(iter+1) + ".ply"
+                if config.mc_with_octree: # default
+                    cur_mesh = mesher.recon_octree_mesh(config.mc_query_level, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+                else:
+                    cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+                
+                if config.o3d_vis_on:
+                    cur_mesh.transform(dataset.begin_pose_inv)
+                    vis.update_mesh(cur_mesh)
+
             else:
-                cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
-            
-            if config.o3d_vis_on:
-                cur_mesh.transform(dataset.begin_pose_inv)
-                vis.update_mesh(cur_mesh)
+                vis.stop()
+                for frame_id in tqdm(range(dataset.total_pc_count)):
+                    if (frame_id < config.begin_frame or frame_id > config.end_frame or \
+                        frame_id % 2 != 0):
+                        continue
+
+                    mesher.ts = frame_id
+                    mesh_path = run_path + '/mesh/mesh_iter_' + str(iter+1) + '_ts_' + str(frame_id) + ".ply"
+                    map_path = run_path + '/map/sdf_map_iter_' + str(iter+1) + '_ts_' + str(frame_id) + ".ply"
+                    if config.mc_with_octree: # default
+                        cur_mesh = mesher.recon_octree_mesh(config.mc_query_level, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+                    else:
+                        cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+
+                    if config.o3d_vis_on:
+                        cur_mesh.transform(dataset.begin_pose_inv)
+                        vis.update_mesh(cur_mesh)
 
     if config.o3d_vis_on:
         vis.stop()

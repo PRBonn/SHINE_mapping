@@ -28,6 +28,8 @@ class Mesher():
         self.dtype = config.dtype
         self.world_scale = config.scale
 
+        self.ts = 0 # query timestamp when conditioned on time
+
         self.global_transform = np.eye(4)
     
     def query_points(self, coord, bs, query_sdf = True, query_sem = False, query_mask = True):
@@ -68,7 +70,10 @@ class Mesher():
                         batch_coord = batch_coord.cuda()
                     batch_feature = self.octree.query_feature(batch_coord, True) # query features
                     if query_sdf:
-                        batch_sdf = -self.geo_decoder.sdf(batch_feature)
+                        if not self.config.time_conditioned:
+                            batch_sdf = -self.geo_decoder.sdf(batch_feature)
+                        else:
+                            batch_sdf = -self.geo_decoder.time_conditionded_sdf(batch_feature, self.ts * torch.ones(batch_feature.shape[0], 1).cuda())
                         sdf_pred[head:tail] = batch_sdf.detach().cpu().numpy()
                     if query_sem:
                         batch_sem = self.sem_decoder.sem_label(batch_feature)
@@ -88,7 +93,10 @@ class Mesher():
             else:
                 feature = self.octree.query_feature(coord, True)
                 if query_sdf:
-                    sdf_pred = -self.geo_decoder.sdf(feature).detach().cpu().numpy()
+                    if not self.config.time_conditioned:
+                        sdf_pred = -self.geo_decoder.sdf(feature).detach().cpu().numpy()
+                    else: # just for a quick test
+                        sdf_pred = -self.geo_decoder.time_conditionded_sdf(feature, self.ts * torch.ones(feature.shape[0], 1).cuda()).detach().cpu().numpy()
                 if query_sem:
                     sem_pred = self.sem_decoder.sem_label(feature).detach().cpu().numpy()
                 if query_mask:

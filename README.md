@@ -12,7 +12,7 @@
   </p>
   <p align="center"><a href="https://www.ipb.uni-bonn.de"><strong>University of Bonn</strong></a>
   <p align="center">(* Equal Contribution)</p>
-  <h3 align="center"><a href="https://arxiv.org/abs/2210.02299">Arxiv Preprint</a> | <a href="">Video</a></h3>
+  <h3 align="center"><a href="https://arxiv.org/abs/2210.02299">Arxiv</a> | <a href="https://www.ipb.uni-bonn.de/wp-content/papercite-data/pdf/zhong2023icra.pdf">Paper</a> | <a href="https://youtu.be/jRqIupJgQZE">Video</a></h3>
   <div align="center"></div>
 </p>
 

@@ -25,10 +25,13 @@ class dataSampler():
         world_scale = self.config.scale
         surface_sample_range_scaled = self.config.surface_sample_range_m * self.config.scale
         surface_sample_n = self.config.surface_sample_n
+        clearance_sample_n = self.config.clearance_sample_n # new part
+
         freespace_sample_n = self.config.free_sample_n
-        all_sample_n = surface_sample_n+freespace_sample_n
+        all_sample_n = surface_sample_n+clearance_sample_n+freespace_sample_n
         free_min_ratio = self.config.free_sample_begin_ratio
-        free_sample_end_dist_scaled = self.config.free_sample_end_dist * self.config.scale
+        free_sample_end_dist_m_scaled = self.config.free_sample_end_dist_m * self.config.scale
+        clearance_dist_scaled = self.config.clearance_dist_m * self.config.scale
         
         sigma_base = self.config.sigma_sigmoid_m * self.config.scale
         # sigma_scale_constant = self.config.sigma_scale_constant
@@ -47,9 +50,17 @@ class dataSampler():
         if sem_label_torch is not None:
             surface_sem_label_tensor = sem_label_torch.repeat(1, surface_sample_n).transpose(0,1)
         
-        # Part 2. free space uniform sampling
+        # Part 2. near surface uniform sampling (for clearance) [from the close surface lower bound closer to the sensor for a clearance distance]
+        clearance_sample_displacement = -torch.rand(point_num*clearance_sample_n, 1, device=dev)*clearance_dist_scaled - surface_sample_range_scaled
+
+        repeated_dist = distances.repeat(clearance_sample_n,1)
+        clearance_sample_dist_ratio = clearance_sample_displacement/repeated_dist + 1.0 # 1.0 means on the surface
+        if sem_label_torch is not None:
+            clearance_sem_label_tensor = torch.zeros_like(repeated_dist)
+
+        # Part 3. free space uniform sampling
         repeated_dist = distances.repeat(freespace_sample_n,1)
-        free_max_ratio = free_sample_end_dist_scaled / repeated_dist + 1.0
+        free_max_ratio = free_sample_end_dist_m_scaled / repeated_dist + 1.0
         free_diff_ratio = free_max_ratio - free_min_ratio
 
         free_sample_dist_ratio = torch.rand(point_num*freespace_sample_n, 1, device=dev)*free_diff_ratio + free_min_ratio
@@ -59,8 +70,8 @@ class dataSampler():
             free_sem_label_tensor = torch.zeros_like(repeated_dist)
         
         # all together
-        all_sample_displacement = torch.cat((surface_sample_displacement, free_sample_displacement),0)
-        all_sample_dist_ratio = torch.cat((surface_sample_dist_ratio, free_sample_dist_ratio),0)
+        all_sample_displacement = torch.cat((surface_sample_displacement, clearance_sample_displacement, free_sample_displacement),0)
+        all_sample_dist_ratio = torch.cat((surface_sample_dist_ratio, clearance_sample_dist_ratio, free_sample_dist_ratio),0)
         
         repeated_points = shift_points.repeat(all_sample_n,1)
         repeated_dist = distances.repeat(all_sample_n,1)
@@ -97,7 +108,7 @@ class dataSampler():
 
         # assign sdf labels to the samples
         # projective distance as the label: behind +, in-front - 
-        sdf_label_tensor = all_sample_displacement.squeeze(1)  # scaled [-1, 1]
+        sdf_label_tensor = all_sample_displacement.squeeze(1)  # scaled [-1, 1] # as distance (before sigmoid)
 
         # assign the normal label to the samples
         normal_label_tensor = None
@@ -107,13 +118,12 @@ class dataSampler():
         # assign the semantic label to the samples (including free space as the 0 label)
         sem_label_tensor = None
         if sem_label_torch is not None:
-            sem_label_tensor = torch.cat((surface_sem_label_tensor, free_sem_label_tensor),0).int()
+            sem_label_tensor = torch.cat((surface_sem_label_tensor, clearance_sem_label_tensor, free_sem_label_tensor),0).int()
 
         # Convert from the all ray surface + all ray free order to the 
         # ray-wise (surface + free) order
         all_sample_points = all_sample_points.reshape(all_sample_n, -1, 3).transpose(0, 1).reshape(-1, 3)
-        sdf_label_tensor = sdf_label_tensor.reshape(all_sample_n, -1).transpose(0, 1).reshape(-1)
-        
+        sdf_label_tensor = sdf_label_tensor.reshape(all_sample_n, -1).transpose(0, 1).reshape(-1) 
         
         weight_tensor = weight_tensor.reshape(all_sample_n, -1).transpose(0, 1).reshape(-1)
         depths_tensor = depths_tensor.reshape(all_sample_n, -1).transpose(0, 1).reshape(-1)
