@@ -212,7 +212,7 @@ For incremental mapping with a regularization strategy, use:
 python shine_incre.py ./config/maicity/maicity_incre_reg.yaml
 ```
 
-An interactive visualizer would pop up. You can press `space` to pause and resume.
+An interactive visualizer would pop up if you set `o3d_vis_on: True` (by default) in the config file. You can press `space` to pause and resume.
 
 <details>
   <summary>[Expected results (click to expand)]</summary>
@@ -228,8 +228,6 @@ For incremental mapping with replay strategy (within a local bounding box), use:
 python shine_incre.py ./config/maicity/maicity_incre_replay.yaml
 ```
 
-An interactive visualizer would pop up if you set `o3d_vis_on: True` (by default) in the config file. You can press `space` to pause and resume. 
-
 <details>
   <summary>[Expected results (click to expand)]</summary>
 
@@ -237,8 +235,9 @@ For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm lea
 
 <video src="https://user-images.githubusercontent.com/34207278/207639846-4f80e55c-7574-45a5-9987-9c7ec6eb20e5.mp4" width="70%">
 
-
 </details>
+
+
 
 <details>
   <summary>[Expected results on other datasets (click to expand)]</summary>
