@@ -168,7 +168,7 @@ class SHINEConfig:
 
         self.weight_s: float = 1.0  # weight for semantic classification loss
 
-        # for dynamic reconstruction (TODO)
+        # for dynamic reconstruction
         self.time_conditioned: bool = False
 
         # optimizer

@@ -86,15 +86,15 @@ For example, for CUDA version >=11.6, you can use:
 pip install torch==1.12.1+cu116 torchvision==0.13.1+cu116 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu116
 ```
 
-Kaolin now supports installation with wheels. For example, to install kaolin 0.13.0 over torch 1.12.1 and cuda 11.6:
+Kaolin now supports installation with wheels. For example, to install kaolin 0.12.0 over torch 1.12.1 and cuda 11.6:
 ```
-pip install kaolin==0.13.0 -f https://nvidia-kaolin.s3.us-east-2.amazonaws.com/torch-1.12.1_cu116.html
+pip install kaolin==0.12.0 -f https://nvidia-kaolin.s3.us-east-2.amazonaws.com/torch-1.12.1_cu116.html
 ```
 
 <details>
   <summary>[Or you can build kaolin by yourself (click to expand)]</summary>
 
-Follow the [instructions](https://kaolin.readthedocs.io/en/latest/notes/installation.html) to install [kaolin](https://kaolin.readthedocs.io/en/latest/index.html). Firstly, clone kaolin to local directory:
+Follow the [instructions](https://kaolin.readthedocs.io/en/latest/notes/installation.html) to install [kaolin](https://kaolin.readthedocs.io/en/latest/index.html). Firstly, clone kaolin to a local directory:
 
 ```
 git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
@@ -128,7 +128,7 @@ They all follow the [KITTI odometry data format](https://www.cvlibs.net/datasets
 
 After preparing the data, you need to correctly set the data path (`pc_path`, `pose_path` and `calib_path`) in the config files under `config` folder. You may also set a path `output_root` to store the experiment results and logs.
 
-Here, we provide the link to several public available datasets for testing SHINE Mapping:
+Here, we provide the link to several publicly available datasets for testing SHINE Mapping:
 
 ### MaiCity synthetic LiDAR dataset
 
@@ -158,7 +158,7 @@ sh ./scripts/download_ncd_example.sh
 
 ### RGB-D datasets
 
-SHINE Mapping also supports the mapping on RGB-D datasets. You may firstly try the synthetic dataset from [NeuralRGB-D](https://github.com/dazinovic/neural-rgbd-surface-reconstruction). You can download the full dataset from [here](http://kaldir.vc.in.tum.de/neural_rgbd/neural_rgbd_data.zip) or use the following script to download (7.25 GB).
+SHINE Mapping also supports the mapping on RGB-D datasets. You may first try the synthetic dataset from [NeuralRGB-D](https://github.com/dazinovic/neural-rgbd-surface-reconstruction). You can download the full dataset from [here](http://kaldir.vc.in.tum.de/neural_rgbd/neural_rgbd_data.zip) or use the following script to download (7.25 GB).
 ```
 sh ./scripts/download_neural_rgbd_data.sh
 ```
@@ -183,7 +183,7 @@ And then run KISS-ICP with your data path `pc_path`
 ```
 kiss_icp_pipeline <pc_path>
 ```
-The estimated pose file can be find in `./results/latest/velodyne.txt`. You can directly use it as your `pose_path`. In this case, you do not need a calib file, so just set `calib_path: ""` in the config file.
+The estimated pose file can be found in `./results/latest/velodyne.txt`. You can directly use it as your `pose_path`. In this case, you do not need a calib file, so just set `calib_path: ""` in the config file.
 </details>
 
 ----
@@ -192,7 +192,7 @@ The estimated pose file can be find in `./results/latest/velodyne.txt`. You can 
 
 We take the MaiCity dataset as an example to show how SHINE Mapping works. You can simply replace maicity with your dataset name in the config file path, such as `./config/[dataset]/[dataset]_[xxx].yaml`.
 
-The results will be stored with your experiment name with the starting timestamp in the `output_root` directory as what you set in the config file. You can find the reconstructed mesh (`*.ply` format) and optimized model in `mesh` and `model` folder, respectively. If the `save_map` option is truned on, then you can find the grid sdf map in `map` folder.
+The results will be stored with your experiment name with the starting timestamp in the `output_root` directory as what you set in the config file. You can find the reconstructed mesh (`*.ply` format) and optimized model in `mesh` and `model` folder, respectively. If the `save_map` option is turned on, then you can find the grid sdf map in `map` folder.
 
 For mapping based on offline batch processing, use:
 ```
@@ -202,14 +202,12 @@ python shine_batch.py ./config/maicity/maicity_batch.yaml
 <details>
   <summary>[Expected results (click to expand)]</summary>
 
-<p align="center">
-  <video src="https://user-images.githubusercontent.com/34207278/206579093-8ba92baa-2b98-462a-b92d-ce3eff8ede64.mp4" width="50%" />
-</p>
+<video src="https://user-images.githubusercontent.com/34207278/206579093-8ba92baa-2b98-462a-b92d-ce3eff8ede64.mp4" width="70%">
 
 </details>
 
 
-For incremental mapping with regularization strategy, use:
+For incremental mapping with a regularization strategy, use:
 ```
 python shine_incre.py ./config/maicity/maicity_incre_reg.yaml
 ```
@@ -219,11 +217,9 @@ An interactive visualizer would pop up. You can press `space` to pause and resum
 <details>
   <summary>[Expected results (click to expand)]</summary>
 
-For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm leaf voxel size for the feature octree.
+For the sake of efficiency, we sacrifice a bit of mapping quality to use a 50cm leaf voxel size for the feature octree.
 
-<p align="center">
-  <video src="https://user-images.githubusercontent.com/34207278/207639680-1060d60f-8ef1-4908-8d1f-9303f9020d4d.mp4" width="50%" />
-</p>
+<video src="https://user-images.githubusercontent.com/34207278/207639680-1060d60f-8ef1-4908-8d1f-9303f9020d4d.mp4" width="70%">
 
 </details>
 
@@ -239,9 +235,8 @@ An interactive visualizer would pop up if you set `o3d_vis_on: True` (by default
 
 For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm leaf voxel size for the feature octree here.
 
-<p align="center">
-  <video src="https://user-images.githubusercontent.com/34207278/207639846-4f80e55c-7574-45a5-9987-9c7ec6eb20e5.mp4" width="50%" />
-</p>
+<video src="https://user-images.githubusercontent.com/34207278/207639846-4f80e55c-7574-45a5-9987-9c7ec6eb20e5.mp4" width="70%">
+
 
 </details>
 
@@ -320,19 +315,19 @@ As mentioned in the paper, we also compute a fairer accuracy metric using the gr
 <details>
   <summary>[Details (click to expand)]</summary>
 
-1. You can play with different loss functions for SHINE Mapping. With the `ray_loss: False` option, the loss would be calculated from the sdf at each sample point. In this case, you can then select from `sdf_bce` (the proposed method), `sdf_l1` and  `sdf_l2` loss as the `main_loss_type`. With the `ray_loss: True` option, the loss would be calculated from each ray conatining multiple point samples as a depth rendering procedure. In this case,  you can select from `dr` and `dr_neus` as the `main_loss_type`. According to our experiments, using our proposed `sdf_bce` loss can achieve the best reconstruction efficiently. We can get a decent reconstruction of a scene with several hundred frames in just one minute. Additionally, you can use the `ekional_loss_on` option to turn on/off the Ekional loss and use `weight_e` as its weight.
+1. You can play with different loss functions for SHINE Mapping. With the `ray_loss: False` option, the loss would be calculated from the sdf at each sample point. In this case, you can then select from `sdf_bce` (the proposed method), `sdf_l1` and  `sdf_l2` loss as the `main_loss_type`. With the `ray_loss: True` option, the loss would be calculated from each ray containing multiple point samples as a depth rendering procedure. In this case,  you can select from `dr` and `dr_neus` as the `main_loss_type`. According to our experiments, using our proposed `sdf_bce` loss can achieve the best reconstruction efficiently. We can get a decent reconstruction of a scene with several hundred frames in just one minute. Additionally, you can use the `ekional_loss_on` option to turn on/off the Ekional loss and use `weight_e` as its weight.
 
-2. The feature octree is built mainly according to `leaf_vox_size`, `tree_level_world` and `tree_level_feat`. `leaf_vox_size` represents the size of the leaf voxel size in meter. `tree_level_world` and `tree_level_feat` represent the total tree level and the tree levels with latent feature codes, respectively. `tree_level_world` should be large enough to gurantee all the map data lies inside the cube with the size `leaf_vox_size**(tree_level_world+1)`.
+2. The feature octree is built mainly according to `leaf_vox_size`, `tree_level_world` and `tree_level_feat`. `leaf_vox_size` represents the size of the leaf voxel size in meter. `tree_level_world` and `tree_level_feat` represent the total tree level and the tree levels with latent feature codes, respectively. `tree_level_world` should be large enough to guarantee all the map data lies inside the cube with the size `leaf_vox_size**(tree_level_world+1)`.
 
-3. SHINE Mapping supports both the offline batch mapping and the incremental sequential mapping. For incremental mapping, one can either load a fixed pre-trained decoder from the batching mapping on a similar dataset (set `load_model: True`) or train the decoder for `freeze_after_frame` frames on-the-fly and then freeze it afterwards (set `load_model: False`). The first option would lead to better mapping performance.
+3. SHINE Mapping supports both offline batch mapping and incremental sequential mapping. For incremental mapping, one can either load a fixed pre-trained decoder from the batching mapping on a similar dataset (set `load_model: True`) or train the decoder for `freeze_after_frame` frames on-the-fly and then freeze it afterwards (set `load_model: False`). The first option would lead to better mapping performance.
 
-4. You can use the `mc_vis_level` parameter to have a trade-off between the scene completion and the exact measurement accuracy. This parameter indicate at which level of the octree the marching cubes reconstruction would be conducted. The larger the value of `mc_vis_level` (but not larger than `tree_level_feat`), the more scene completion ability you would gain (but also some artifacts such as a double wall may appear). And with the small value, SHINE mapping would only reconstruct the part with actual measurements without filling the holes. The safest way to avoid the holes on the ground is to set `mc_mask_on: False` to disable the masking for marching cubes. By turning on the `mc_with_octree` option, you can achieve a faster marching cubes reconstruction only in the region within the octree nodes. 
+4. You can use the `mc_vis_level` parameter to have a trade-off between the scene completion and the exact measurement accuracy. This parameter indicates at which level of the octree the marching cubes reconstruction would be conducted. The larger the value of `mc_vis_level` (but not larger than `tree_level_feat`), the more scene completion ability you would gain (but also some artifacts such as a double wall may appear). And with the small value, SHINE mapping would only reconstruct the part with actual measurements without filling the holes. The safest way to avoid the holes on the ground is to set `mc_mask_on: False` to disable the masking for marching cubes. By turning on the `mc_with_octree` option, you can achieve a faster marching cubes reconstruction only in the region within the octree nodes. 
 
 5. The incremental mapping with regularization strategy (setting `continual_learning_reg: True`) can achieve incremental neural mapping without storing an ever-growing data pool which would be a burden for the memory. The coefficient `lambda_forget` needs to be fine-tuned under different feature octree and point sampling settings. The recommended value is from `1e5` to `1e8`. A pre-trained decoder is also recommended to be loaded during incremental mapping with regularization for better performance. 
 
-6. We also provide an option to conduct incremental mapping with replay strategy in a local sliding window. You can turn this on by setting `window_replay_on: True` with a valid `window_radius_m` indicating the size of the sliding window.
+6. We also provide an option to conduct incremental mapping with a replay strategy in a local sliding window. You can turn this on by setting `window_replay_on: True` with a valid `window_radius_m` indicating the size of the sliding window.
 
-7. It's also possible to incoporate semantic information in our SHINE-Mapping framework. You may set `semantic_on = True` in the `utils/config.py` file to enable semantic mapping and also provide the semantic supervision by setting the `label_path` in the config file.
+7. It's also possible to incorporate semantic information in our SHINE-Mapping framework. You may set `semantic_on = True` in the `utils/config.py` file to enable semantic mapping and also provide semantic supervision by setting the `label_path` in the config file.
 
 </details>
 
@@ -358,7 +353,7 @@ If you have any questions, please contact:
 ## Acknowledgment
 This work has partially been funded by the European Union’s HORIZON programme under grant agreement No 101070405 (DigiForest) and grant agreement No 101017008 (Harmony).
 
-Additional, we thank greatly for the authors of the following opensource projects:
+Additionally, we thank greatly for the authors of the following opensource projects:
 
 - [NGLOD](https://github.com/nv-tlabs/nglod) (octree based hierarchical feature structure built based on [kaolin](https://kaolin.readthedocs.io/en/latest/index.html)) 
 - [VDBFusion](https://github.com/PRBonn/vdbfusion) (comparison baseline)

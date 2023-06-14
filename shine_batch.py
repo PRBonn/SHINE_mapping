@@ -91,6 +91,11 @@ def run_shine_mapping_batch():
 
     octree.print_detail()
 
+    if config.normal_loss_on or config.ekional_loss_on or config.proj_correction_on or config.consistency_loss_on:
+        require_gradient = True
+    else:
+        require_gradient = False
+
     # begin training
     print("Begin mapping")
     cur_base_lr = config.lr
@@ -108,7 +113,7 @@ def run_shine_mapping_batch():
 
         # print(ts)
 
-        if config.normal_loss_on or config.ekional_loss_on or config.proj_correction_on:
+        if require_gradient:
             coord.requires_grad_(True)
 
         T1 = get_time()
@@ -130,7 +135,7 @@ def run_shine_mapping_batch():
 
         # if config.normal_loss_on or config.ekional_loss_on:
         # use non-projective distance, gradually refined
-        if config.normal_loss_on or config.ekional_loss_on or config.proj_correction_on:
+        if require_gradient:
             g = get_gradient(coord, pred)*sigma_sigmoid
             
         if config.proj_correction_on:
@@ -234,18 +239,15 @@ def run_shine_mapping_batch():
                     cur_mesh = mesher.recon_octree_mesh(config.mc_query_level, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
                 else:
                     cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
-                
                 if config.o3d_vis_on:
                     cur_mesh.transform(dataset.begin_pose_inv)
                     vis.update_mesh(cur_mesh)
-
             else:
                 vis.stop()
                 for frame_id in tqdm(range(dataset.total_pc_count)):
                     if (frame_id < config.begin_frame or frame_id > config.end_frame or \
                         frame_id % 2 != 0):
                         continue
-
                     mesher.ts = frame_id
                     mesh_path = run_path + '/mesh/mesh_iter_' + str(iter+1) + '_ts_' + str(frame_id) + ".ply"
                     map_path = run_path + '/map/sdf_map_iter_' + str(iter+1) + '_ts_' + str(frame_id) + ".ply"

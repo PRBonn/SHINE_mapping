@@ -63,6 +63,7 @@ def run_shine_mapping_incremental():
 
     # learnable parameters
     geo_mlp_param = list(geo_mlp.parameters())
+    sem_mlp_param = list(sem_mlp.parameters())
     # learnable sigma for differentiable rendering
     sigma_size = torch.nn.Parameter(torch.ones(1, device=dev)*1.0) 
     # fixed sigma for sdf prediction supervised with BCE loss
@@ -72,6 +73,11 @@ def run_shine_mapping_incremental():
     total_iter = 0
     if config.continual_learning_reg:
         config.loss_reduction = "sum" # other-wise "mean"
+
+    if config.normal_loss_on or config.ekional_loss_on or config.proj_correction_on or config.consistency_loss_on:
+        require_gradient = True
+    else:
+        require_gradient = False
 
     # for each frame
     for frame_id in tqdm(range(dataset.total_pc_count)):
@@ -97,7 +103,7 @@ def run_shine_mapping_incremental():
         dataset.process_frame(frame_id, incremental_on=config.continual_learning_reg or local_data_only)
         
         octree_feat = list(octree.parameters())
-        opt = setup_optimizer(config, octree_feat, geo_mlp_param, None, sigma_size)
+        opt = setup_optimizer(config, octree_feat, geo_mlp_param, sem_mlp_param, sigma_size)
         octree.print_detail()
 
         T1 = get_time()
@@ -108,7 +114,7 @@ def run_shine_mapping_incremental():
             # we do not use the ray rendering loss here for the incremental mapping
             coord, sdf_label, _, _, _, sem_label, weight = dataset.get_batch() 
             
-            if config.normal_loss_on or config.ekional_loss_on:
+            if require_gradient:
                 coord.requires_grad_(True)
 
             # interpolate and concat the hierachical grid features
@@ -121,6 +127,21 @@ def run_shine_mapping_incremental():
 
             # calculate the loss
             surface_mask = weight > 0
+
+            if require_gradient:
+                g = get_gradient(coord, sdf_pred)*sigma_sigmoid
+
+            if config.consistency_loss_on:
+                near_index = torch.randint(0, coord.shape[0], (min(config.consistency_count,coord.shape[0]),), device=dev)
+                shift_scale = config.consistency_range * config.scale # 10 cm
+                random_shift = torch.rand_like(coord) * 2 * shift_scale - shift_scale
+                coord_near = coord + random_shift 
+                coord_near = coord_near[near_index, :] # only use a part of these coord to speed up
+                coord_near.requires_grad_(True)
+                feature_near = octree.query_feature(coord_near)
+                pred_near = geo_mlp.sdf(feature_near)
+                g_near = get_gradient(coord_near, pred_near)*sigma_sigmoid
+
             cur_loss = 0.
             weight = torch.abs(weight) # weight's sign indicate the sample is around the surface or in the free space
             sdf_loss = sdf_bce_loss(sdf_pred, sdf_label, sigma_sigmoid, weight, config.loss_weight_on, config.loss_reduction) 
@@ -134,10 +155,16 @@ def run_shine_mapping_incremental():
 
             # optional ekional loss
             eikonal_loss = 0.
-            if config.ekional_loss_on:
-                g = get_gradient(coord, sdf_pred)*sigma_sigmoid
-                eikonal_loss = ((g[surface_mask].norm(2, dim=-1) - 1.0) ** 2).mean() # MSE with regards to 1  
+            if config.ekional_loss_on: # MSE with regards to 1  
+                # eikonal_loss = ((g.norm(2, dim=-1) - 1.0) ** 2).mean() # both the surface and the freespace
+                # eikonal_loss = ((g[~surface_mask].norm(2, dim=-1) - 1.0) ** 2).mean() # only the freespace
+                eikonal_loss = ((g[surface_mask].norm(2, dim=-1) - 1.0) ** 2).mean() # only close to the surface
                 cur_loss += config.weight_e * eikonal_loss
+            
+            consistency_loss = 0.
+            if config.consistency_loss_on:
+                consistency_loss = (1.0 - F.cosine_similarity(g[near_index, :], g_near)).mean()
+                cur_loss += config.weight_c * consistency_loss
             
             # semantic classification loss
             sem_loss = 0.
@@ -154,7 +181,7 @@ def run_shine_mapping_incremental():
 
             if config.wandb_vis_on:
                 wandb_log_content = {'iter': total_iter, 'loss/total_loss': cur_loss, 'loss/sdf_loss': sdf_loss, \
-                    'loss/reg_loss':reg_loss, 'loss/eikonal_loss': eikonal_loss, 'loss/sem_loss': sem_loss} 
+                    'loss/reg_loss':reg_loss, 'loss/eikonal_loss': eikonal_loss, 'loss/consistency_loss': consistency_loss, 'loss/sem_loss': sem_loss} 
                 wandb.log(wandb_log_content)
         
         # calculate the importance of each octree feature
@@ -162,7 +189,6 @@ def run_shine_mapping_incremental():
             opt.zero_grad(set_to_none=True)
             cal_feature_importance(dataset, octree, geo_mlp, sigma_sigmoid, config.bs, \
                 config.cal_importance_weight_down_rate, config.loss_reduction)
-
 
         T2 = get_time()
         
@@ -188,7 +214,7 @@ def run_shine_mapping_incremental():
                 vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref)
 
             # visualize the octree (it is a bit slow and memory intensive for the visualization)
-            # if vis_mesh: 
+            # if vis_octree: 
             #     cur_mesh.transform(dataset.begin_pose_inv)
             #     vis_list = [] # create a list of bbx for the octree nodes
             #     for l in range(config.tree_level_feat):
