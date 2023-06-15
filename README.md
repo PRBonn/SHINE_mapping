@@ -66,6 +66,7 @@ Accurate mapping of large-scale environments is an essential building block of m
 
 ----
 ## Containerized installation
+Note that you CUDA version must be >=11.6.2 to be compatible with the container.
 
 ### 1. Install docker
 [https://docs.docker.com/engine/install/ubuntu/](https://docs.docker.com/engine/install/ubuntu/)
