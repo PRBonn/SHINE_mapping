@@ -83,13 +83,16 @@ docker build --tag shine .
 ```
 ### 5. Run container with example
 ```
-docker run --rm -v .:/repository -it --gpus all shine
+mkdir /tmp/shine_test_data
+docker run --rm -v .:/repository -v /tmp/shine_test_data:/data -it --gpus all shine
 ```
+Results will be procduced in /tmp/shine_test_data/results
 ### 6. Run container on your data
 ```
-docker run --rm -v .:/repository -v ${MY_DATA_DIR}:/data -it --gpus all shine
+docker run --rm -v .:/repository -v ${MY_DATA_DIR}:/data -it --gpus all shine bash
 ```
-where `${MY_DATA_DIR}` is the directory with data in the format described in `config/kitti/docker_kitti_batch.yaml`
+where `${MY_DATA_DIR}` is the directory with data in the format described in `config/kitti/docker_kitti_batch.yaml`.
+Once inside the container RUN as described below. Results will be found on host in `${MY_DATA_DIR}/results` .
 
 ## Native installation
 

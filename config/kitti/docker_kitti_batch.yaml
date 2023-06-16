@@ -1,8 +1,10 @@
 setting:
   name: "docker_batch"
   output_root: "/data/results"
-  pc_path: "/data/pc"
+  pc_path: "/data/velodyne"
   pose_path: "/data/poses.txt"
+  label_path: "/data/labels" # optional for semantic mapping
+  calib_path: "/data/calib.txt"
   load_model: False
   model_path: "" 
   first_frame_ref: False

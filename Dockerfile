@@ -2,7 +2,7 @@
 #
 # Make sure you have the input directory (MY_DATA_DIR) prepared as can be seen in kitti/docker_kitti_config.yaml
 #
-# Run: docker run --rm -v .:/repository -v ${MY_DATA_DIR}:/data -it --gpus all shine
+# Run: docker run --rm -v .:/repository -v ${MY_DATA_DIR}:/data -it --gpus all shine bash
 # Run: (with vis): xhost local:root && docker run --rm -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY -v .:/repository -v ${MY_DATA_DIR}:/data -it --gpus 'all,"capabilities=compute,utility,graphics"' shine
 
 FROM nvidia/cuda:11.6.2-devel-ubuntu20.04
@@ -36,4 +36,4 @@ RUN python3 setup.py develop
 
 WORKDIR /repository
 
-CMD ["bash", "-c", "./scripts/download_kitti_example.sh && python3 shine_batch.py ./config/kitti/docker_kitti_batch.yaml"]
+CMD ["bash", "-c", ". ./scripts/download_kitti_example.sh && mv /repository/data/kitti_example/sequences/00/* /data/ && mkdir -p /data/results && cd /repository && python3 shine_batch.py ./config/kitti/docker_kitti_batch.yaml"]
