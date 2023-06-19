@@ -65,7 +65,36 @@ Incremental Mapping | Reconstruction Results |
 Accurate mapping of large-scale environments is an essential building block of most outdoor autonomous systems. Challenges of traditional mapping methods include the balance between memory consumption and mapping accuracy. This paper addresses the problems of achieving large-scale 3D reconstructions with implicit representations using 3D LiDAR measurements. We learn and store implicit features through an octree-based hierarchical structure, which is sparse and extensible. The features can be turned into signed distance values through a shallow neural network. We leverage binary cross entropy loss to optimize the local features with the 3D measurements as supervision. Based on our implicit representation, we design an incremental mapping system with regularization to tackle the issue of catastrophic forgetting in continual learning. Our experiments show that our 3D reconstructions are more accurate, complete, and memory-efficient than current state-of-the-art 3D mapping methods.
 
 ----
-## Installation
+## Containerized installation
+Note that you CUDA version must be >=11.6.2 to be compatible with the container.
+
+### 1. Install docker
+[https://docs.docker.com/engine/install/ubuntu/](https://docs.docker.com/engine/install/ubuntu/)
+### 2. Install nvidia container runtime
+[https://developer.nvidia.com/nvidia-container-runtime](https://developer.nvidia.com/nvidia-container-runtime)
+### 3. Clone SHINE Mapping repository
+```
+git clone git@github.com:PRBonn/SHINE_mapping.git
+cd SHINE_mapping
+```
+### 4. Build container
+```
+docker build --tag shine .
+```
+### 5. Run container with example
+```
+mkdir /tmp/shine_test_data
+docker run --rm -v .:/repository -v /tmp/shine_test_data:/data -it --gpus all shine
+```
+Results will be procduced in /tmp/shine_test_data/results
+### 6. Run container on your data
+```
+docker run --rm -v .:/repository -v ${MY_DATA_DIR}:/data -it --gpus all shine bash
+```
+where `${MY_DATA_DIR}` is the directory with data in the format described in `config/kitti/docker_kitti_batch.yaml`.
+Once inside the container RUN as described below. Results will be found on host in `${MY_DATA_DIR}/results` .
+
+## Native installation
 
 ### 1. Clone SHINE Mapping repository
 ```
