@@ -30,7 +30,7 @@ WORKDIR /opt
 RUN git clone --recursive https://github.com/NVIDIAGameWorks/kaolin
 
 WORKDIR /opt/kaolin
-RUN git checkout v0.12.0
+RUN git checkout v0.13.0
 RUN pip3 install -r ./tools/requirements.txt
 RUN python3 setup.py develop 
 
