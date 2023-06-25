@@ -140,10 +140,10 @@ docker build --tag shine .
 ### 5. Run container with example
 ```
 mkdir /tmp/shine_test_data
-docker run --rm -v .:/repository -v /tmp/shine_test_data:/data -it --gpus all shine
+docker run --rm -v ${pwd}/:/repository -v /tmp/shine_test_data:/data -it --gpus all shine
 ```
-Results will be procduced in /tmp/shine_test_data/results
-### 6. Run container on your data
+Results will be produced in `/tmp/shine_test_data/results`.
+### 6. Run container on your own data
 ```
 docker run --rm -v .:/repository -v ${MY_DATA_DIR}:/data -it --gpus all shine bash
 ```
