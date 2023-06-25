@@ -229,7 +229,7 @@ class Mesher():
         _, verts_sem, _ = self.query_points(verts_scaled, self.config.infer_bs, False, True, False)
         verts_sem_list = list(verts_sem)
         verts_sem_rgb = [sem_kitti_color_map[sem_label] for sem_label in verts_sem_list]
-        verts_sem_rgb = np.asarray(verts_sem_rgb)/255.0
+        verts_sem_rgb = np.asarray(verts_sem_rgb, dtype=np.float64)/255.0
         mesh.vertex_colors = o3d.utility.Vector3dVector(verts_sem_rgb)
 
         # filter the freespace vertices
@@ -269,7 +269,7 @@ class Mesher():
 
         # directly use open3d to get mesh
         mesh = o3d.geometry.TriangleMesh(
-            o3d.utility.Vector3dVector(verts),
+            o3d.utility.Vector3dVector(verts.astype(np.float64)),
             o3d.utility.Vector3iVector(faces)
         )
 

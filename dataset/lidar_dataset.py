@@ -168,7 +168,7 @@ class LiDARDataset(Dataset):
             frame_sem_label = np.round(frame_sem_label, 0) # to integer value
             sem_label_list = list(frame_sem_label)
             frame_sem_rgb = [sem_kitti_color_map[sem_label] for sem_label in sem_label_list]
-            frame_sem_rgb = np.asarray(frame_sem_rgb)/255.0
+            frame_sem_rgb = np.asarray(frame_sem_rgb, dtype=np.float64)/255.0
             frame_pc.colors = o3d.utility.Vector3dVector(frame_sem_rgb)
         
         frame_origin = self.cur_pose_ref[:3, 3] * self.config.scale  # translation part
@@ -281,10 +281,10 @@ class LiDARDataset(Dataset):
     def read_point_cloud(self, filename: str):
         # read point cloud from either (*.ply, *.pcd) or (kitti *.bin) format
         if ".bin" in filename:
-            points = np.fromfile(filename, dtype=np.float32).reshape((-1, 4))[:, :3]
+            points = np.fromfile(filename, dtype=np.float32).reshape((-1, 4))[:, :3].astype(np.float64)
         elif ".ply" in filename or ".pcd" in filename:
             pc_load = o3d.io.read_point_cloud(filename)
-            points = np.asarray(pc_load.points)
+            points = np.asarray(pc_load.points, dtype=np.float64)
         else:
             sys.exit(
                 "The format of the imported point cloud is wrong (support only *pcd, *ply and *bin)"
@@ -293,14 +293,14 @@ class LiDARDataset(Dataset):
             points, self.config.min_z, self.config.min_range
         )
         pc_out = o3d.geometry.PointCloud()
-        pc_out.points = o3d.utility.Vector3dVector(preprocessed_points)
+        pc_out.points = o3d.utility.Vector3dVector(preprocessed_points) # Vector3dVector is faster for np.float64 
         return pc_out
 
     def read_semantic_point_label(self, bin_filename: str, label_filename: str):
 
         # read point cloud (kitti *.bin format)
         if ".bin" in bin_filename:
-            points = np.fromfile(bin_filename, dtype=np.float32).reshape((-1, 4))[:, :3]
+            points = np.fromfile(bin_filename, dtype=np.float32).reshape((-1, 4))[:, :3].astype(np.float64)
         else:
             sys.exit(
                 "The format of the imported point cloud is wrong (support only *bin)"
@@ -318,13 +318,13 @@ class LiDARDataset(Dataset):
             points, labels, self.config.min_z, self.config.min_range, filter_moving=self.config.filter_moving_object
         )
 
-        sem_labels = (np.asarray(sem_labels)/255.0).reshape((-1, 1)).repeat(3, axis=1) # label 
+        sem_labels = (np.asarray(sem_labels, dtype=np.float64)/255.0).reshape((-1, 1)).repeat(3, axis=1) # label 
 
         # TODO: better to use o3d.t.geometry.PointCloud(device)
         # a bit too cubersome
         # then you can use sdf_map_pc.point['positions'], sdf_map_pc.point['intensities'], sdf_map_pc.point['labels']
         pc_out = o3d.geometry.PointCloud()
-        pc_out.points = o3d.utility.Vector3dVector(points)
+        pc_out.points = o3d.utility.Vector3dVector(points) # Vector3dVector is faster for np.float64 
         pc_out.colors = o3d.utility.Vector3dVector(sem_labels)
 
         return pc_out

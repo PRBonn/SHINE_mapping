@@ -222,6 +222,7 @@ class FeatureOctree(nn.Module):
 
     # get the hierachical-sumed interpolated feature at spatial points x
     def query_feature_with_indices(self, coord, hierarchical_indices):
+        # TODO: filter the -1 for faster back-propgation
         sum_features = torch.zeros(coord.shape[0], self.feature_dim, device=self.device)
         for i in range(self.featured_level_num): # for each level
             current_level = self.max_level - i

@@ -46,7 +46,9 @@ def setup_experiment(config: SHINEConfig):
         wandb.init(project="SHINEMapping", config=vars(config), dir=run_path) # your own worksapce
         wandb.run.name = run_name         
     
-    # o3d.utility.random.seed(42)
+    # set the random seed (for deterministic experiment results)
+    o3d.utility.random.seed(config.seed)
+    torch.manual_seed(config.seed)
 
     return run_path
 

@@ -27,6 +27,7 @@ class SHINEConfig:
         self.end_frame: int = 0  # end at this frame
         self.every_frame: int = 1  # process every x frame
 
+        self.seed: int = 42  # random seed for the experiments
         self.num_workers: int = 12 # number of worker for the dataloader
         self.device: str = "cuda"  # use "cuda" or "cpu"
         self.gpu_id: str = "0"  # used GPU id
