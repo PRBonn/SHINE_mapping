@@ -1,6 +1,5 @@
 setting:
   name: "kitti_incre_replay"
-  output_root: "./experiments/"
   pc_path: "xxx/data/kitti/sequences/00/velodyne"
   label_path: "xxx/data/kitti/sequences/00/labels" # optional for semantic mapping
   pose_path: "xxx/data/kitti/sequences/00/poses.txt"
@@ -14,8 +13,9 @@ setting:
   device: "cuda"
   gpu_id: "0"
 process:
-  min_range_m: 2.75
+  min_range_m: 3.0
   pc_radius_m: 25.0  # distance filter for each frame
+  min_z_m: -3.5
   rand_downsample: False # use random or voxel downsampling
   vox_down_m: 0.05
   rand_down_r: 0.2
@@ -42,7 +42,7 @@ loss:
   sigma_sigmoid_m: 0.1
   loss_weight_on: False
   behind_dropoff_on: False
-  ekional_loss_on: False
+  ekional_loss_on: True
   weight_e: 0.1
 continual:
   continual_learning_reg: False # using incremental mapping with regularization
@@ -59,8 +59,9 @@ eval:
   o3d_vis_on: True # visualize the mapping or not
   vis_freq_iters: 0 
   save_freq_iters: 10000 # save the model and octree every x iterations
-  mesh_freq_frame: 5 # reconstruct the mesh every x frames
+  mesh_freq_frame: 10 # reconstruct the mesh every x frames
   mc_res_m: 0.1 # reconstruction marching cubes resolution
   mc_with_octree: True # querying sdf only in certain levels of the octree
+  mc_local: False
   mc_vis_level: 1
   save_map: False # save the sdf map or not 

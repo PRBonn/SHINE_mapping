@@ -13,7 +13,6 @@ import multiprocessing
 
 from utils.config import SHINEConfig
 
-# TODO: polish the codes
 
 def get_dict_values(dictionary, keys, default=None):
     return [dictionary.get(key, default) for key in keys]
@@ -34,7 +33,7 @@ class FeatureOctree(nn.Module):
         super().__init__()
 
         # [0 1 2 3 ... max_level-1 max_level], 0 level is the root, which have 8 corners.
-        self.max_level = config.tree_level_world 
+        self.max_level = config.tree_level_world
         # the number of levels with feature (begin from bottom)
         self.leaf_vox_size = config.leaf_vox_size 
         self.featured_level_num = config.tree_level_feat 
@@ -197,7 +196,6 @@ class FeatureOctree(nn.Module):
         return p
 
     # get the unique indices of the feature node at spatial points x for each level
-    # TODO: speed up !!!
     def get_indices(self, coord):
         self.hierarchical_indices = [] # initialize the hierarchical indices list for the batch points x
         for i in range(self.featured_level_num): # bottom-up, for each level
@@ -222,7 +220,7 @@ class FeatureOctree(nn.Module):
 
     # get the hierachical-sumed interpolated feature at spatial points x
     def query_feature_with_indices(self, coord, hierarchical_indices):
-        # TODO: filter the -1 for faster back-propgation
+        # TODO: filter the -1 idx for faster back-propgation
         sum_features = torch.zeros(coord.shape[0], self.feature_dim, device=self.device)
         for i in range(self.featured_level_num): # for each level
             current_level = self.max_level - i

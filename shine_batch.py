@@ -3,6 +3,7 @@ import numpy as np
 from numpy.linalg import inv, norm
 from tqdm import tqdm
 import wandb
+import shutil
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -30,6 +31,8 @@ def run_shine_mapping_batch():
         )
     
     run_path = setup_experiment(config)
+    shutil.copy2(sys.argv[1], run_path) # copy the config file to the result folder
+
     dev = config.device
 
     # initialize the feature octree

@@ -63,6 +63,7 @@ class LiDARDataset(Dataset):
         self.map_down_pc = o3d.geometry.PointCloud()
         # map bounding box in the world coordinate system
         self.map_bbx = o3d.geometry.AxisAlignedBoundingBox()
+        self.cur_bbx = o3d.geometry.AxisAlignedBoundingBox()
 
         # get the pose in the reference frame
         self.used_pc_count = 0
@@ -183,6 +184,7 @@ class LiDARDataset(Dataset):
         self.cur_frame_pc = frame_pc_clone
 
         self.map_bbx = self.map_down_pc.get_axis_aligned_bounding_box()
+        self.cur_bbx = self.cur_frame_pc.get_axis_aligned_bounding_box()
         # and scale to [-1,1] coordinate system
         frame_pc_s = frame_pc.scale(self.config.scale, center=(0,0,0))
 

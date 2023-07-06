@@ -240,13 +240,29 @@ python shine_batch.py ./config/maicity/maicity_batch.yaml
 
 </details>
 
+For incremental mapping with replay strategy (within a local bounding box), use:
+```
+python shine_incre.py ./config/maicity/maicity_incre_replay.yaml
+```
+
+An interactive visualizer would pop up if you set `o3d_vis_on: True` (by default) in the config file. You can press `space` to pause and resume.
+
+
+<details>
+  <summary>[Expected results (click to expand)]</summary>
+
+For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm leaf voxel size for the feature octree here.
+
+To only visualize the mesh in a local bounding box for faster operation, you can set `mc_local: True` and `mc_with_octree: False` in the config file. 
+
+<video src="https://user-images.githubusercontent.com/34207278/207639846-4f80e55c-7574-45a5-9987-9c7ec6eb20e5.mp4" width="70%">
+
+</details>
 
 For incremental mapping with a regularization strategy, use:
 ```
 python shine_incre.py ./config/maicity/maicity_incre_reg.yaml
 ```
-
-An interactive visualizer would pop up if you set `o3d_vis_on: True` (by default) in the config file. You can press `space` to pause and resume.
 
 <details>
   <summary>[Expected results (click to expand)]</summary>
@@ -256,22 +272,6 @@ For the sake of efficiency, we sacrifice a bit of mapping quality to use a 50cm 
 <video src="https://user-images.githubusercontent.com/34207278/207639680-1060d60f-8ef1-4908-8d1f-9303f9020d4d.mp4" width="70%">
 
 </details>
-
-For incremental mapping with replay strategy (within a local bounding box), use:
-```
-python shine_incre.py ./config/maicity/maicity_incre_replay.yaml
-```
-
-<details>
-  <summary>[Expected results (click to expand)]</summary>
-
-For the sake of efficiency, we sacrifice a bit mapping quality to use a 50cm leaf voxel size for the feature octree here.
-
-<video src="https://user-images.githubusercontent.com/34207278/207639846-4f80e55c-7574-45a5-9987-9c7ec6eb20e5.mp4" width="70%">
-
-</details>
-
-
 
 <details>
   <summary>[Expected results on other datasets (click to expand)]</summary>
@@ -343,6 +343,8 @@ to get the reconstruction metrics such as Chamfer distance, completeness, F-scor
 
 As mentioned in the paper, we also compute a fairer accuracy metric using the ground truth point cloud masked by the intersection of the reconstructed meshes of all the compared methods. To generate such masked ground truth point clouds, you can configure the data path in `./eval/crop_intersection.py` and then run it.
 
+To reproduce the quantitative results on MaiCity and Newer College dataset in the paper, you can use the config files in `./config/config_icra2023/`. The reconsturction mesh can also be downloaded from [here](https://uni-bonn.sciebo.de/s/TC0RyQmfBjxLcWH). Note that these numbers are obtained using the batch mapping mode. You can achieve similar results using the incremental mapping mode with the replay strategy. 
+
 ## Tips
 
 <details>
@@ -360,7 +362,7 @@ As mentioned in the paper, we also compute a fairer accuracy metric using the gr
 
 6. We also provide an option to conduct incremental mapping with a replay strategy in a local sliding window. You can turn this on by setting `window_replay_on: True` with a valid `window_radius_m` indicating the size of the sliding window.
 
-7. It's also possible to incorporate semantic information in our SHINE-Mapping framework. You may set `semantic_on = True` in the `utils/config.py` file to enable semantic mapping and also provide semantic supervision by setting the `label_path` in the config file.
+7. It's also possible to incorporate semantic information in our SHINE-Mapping framework. You may set `semantic_on = True` in the `utils/config.py` file to enable semantic mapping and also provide semantic supervision by setting the `label_path` in the config file. The labels should be in [Semantic KITTI](http://semantic-kitti.org/) format. An example semantic reconstruction results using Semantic KITTI can be downloaded from [here](https://uni-bonn.sciebo.de/s/ZO5e0PU9JCYKXYl).
 
 </details>
 

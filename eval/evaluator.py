@@ -6,15 +6,11 @@ dataset_name = "maicity_01_"
 
 # ground truth point cloud (or mesh) file
 # (optional masked by the intersection part of all the compared method)
-gt_pcd_path = "/media/yuepan/DATA/1_data/mai_city/gt_map_pc_mai.ply"
-gt_pcd_path = "/media/yuepan/DATA/1_data/maicity/01/gt_map_pc_mai_1cm.ply"
-#gt_pcd_path = "/media/yuepan/DATA/1_data/maicity/01/gt_map_pc_mai_1cm_dense_part.ply"
+gt_pcd_path = "xxx/mai_city/gt_map_pc_mai.ply"
+#gt_pcd_path = "xxx/mai_city/gt_map_pc_mai_inter_croped.ply"
 
-#pred_mesh_path = "/media/yuepan/DATA/1_data/maicity/01/maicity_new_10cm.ply"
-pred_mesh_path = "/media/yuepan/DATA/1_data/maicity/01/ours_fg10cm_mc5cm_50m_e_new.ply"
-
-method_name = "ours_new"
-
+pred_mesh_path = "xxx/mai_shine_prediction.ply"
+method_name = "ours_xxx"
 
 # pred_mesh_path = "xxx/baseline/vdb_fusion_xxx.ply"
 # method_name = "vdb_fusion_xxx"
@@ -30,7 +26,7 @@ method_name = "ours_new"
 
 # gt_pcd_path = "xxx/ncd_example/quad/ncd_quad_gt_pc.ply"
 
-# pred_mesh_path = "xxx/ours_xxx.ply"
+# pred_mesh_path = "xxx/ncd_shine_prediction.ply"
 # method_name = "ours_xxx"
 
 # pred_mesh_path = "xxx/baseline/vdb_fusion_xxx.ply"

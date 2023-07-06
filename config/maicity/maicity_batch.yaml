@@ -14,7 +14,8 @@ setting:
   gpu_id: "0"
 process:
   min_range_m: 1.5
-  pc_radius_m: 30.0  # distance filter for each frame
+  pc_radius_m: 50.0  # distance filter for each frame
+  min_z_m: -10.0
   rand_downsample: False # use random or voxel downsampling
   vox_down_m: 0.05
   rand_down_r: 0.2
@@ -56,10 +57,11 @@ optimizer:
 eval:
   wandb_vis_on: False # log to wandb or not
   o3d_vis_on: True # visualize the mapping or not
-  vis_freq_iters: 5000 # reconstruct the mesh every x iterations
+  vis_freq_iters: 10000 # reconstruct the mesh every x iterations
   save_freq_iters: 10000 # save the model and octree every x iterations
   mesh_freq_frame: 1 
   mc_res_m: 0.1 # reconstruction marching cubes resolution
   mc_with_octree: False # querying sdf in the map bbx
+  mc_local: False
   mc_vis_level: 1 # mask the voxels used for marching cubes reconstruction according to the octree level
   save_map: False # save the sdf map or not

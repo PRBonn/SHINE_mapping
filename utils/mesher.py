@@ -13,8 +13,6 @@ from model.decoder import Decoder
 
 class Mesher():
 
-    # TODO: add methods to reconstruct large scale meshs without memory issues [marching cubes in blocks]
-
     def __init__(self, config: SHINEConfig, octree: FeatureOctree, \
         geo_decoder: Decoder, sem_decoder: Decoder):
 
@@ -132,7 +130,7 @@ class Mesher():
         voxel_num_xyz[2]+=1
 
         voxel_count_total = voxel_num_xyz[0] * voxel_num_xyz[1] * voxel_num_xyz[2]
-        if voxel_count_total > 1e8: # TODO: avoid gpu memory issue, dirty fix
+        if voxel_count_total > 5e8: # TODO: avoid gpu memory issue, dirty fix
             self.cur_device = "cpu" # firstly save in cpu memory (which would be larger than gpu's)
             print("too much query points, use cpu memory")
         x = torch.arange(voxel_num_xyz[0], dtype=torch.int16, device=self.cur_device)
@@ -195,8 +193,8 @@ class Mesher():
 
         if mc_mask is not None:
             mc_mask = mc_mask.reshape(voxel_num_xyz[0], voxel_num_xyz[1], voxel_num_xyz[2]).astype(dtype=bool)
-            # mc_mask[:,:,0:1] = True # TODO: dirty fix for the ground issue 
-
+            # mc_mask[:,:,0:1] = True 
+            
         return sdf_pred, sem_pred, mc_mask
 
     def mc_mesh(self, mc_sdf, mc_mask, voxel_size, mc_origin):

@@ -100,6 +100,7 @@ class MapVisualizer():
         self._set_white_background(self.vis)
         self.vis.get_render_option().point_size = 2
         self.vis.get_render_option().light_on = True
+        self.vis.get_render_option().mesh_shade_option = o3d.visualization.MeshShadeOption.Color
         print(100 * "*")
         print(f"{w_name} initialized. Press [SPACE] to pause/start, [N] to step, [ESC] to exit.")
 

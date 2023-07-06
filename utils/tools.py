@@ -49,6 +49,7 @@ def setup_experiment(config: SHINEConfig):
     # set the random seed (for deterministic experiment results)
     o3d.utility.random.seed(config.seed)
     torch.manual_seed(config.seed)
+    np.random.seed(config.seed) 
 
     return run_path
 

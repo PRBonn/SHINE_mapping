@@ -34,8 +34,8 @@ class SHINEConfig:
         self.dtype = torch.float32 # default torch tensor data type
         self.pc_count_gpu_limit: int = 500 # maximum used frame number to be stored in the gpu
 
-        # just a ramdom number for the global shift of the input on z axis (used to avoid octree boundary marching cubes issues)
-        self.global_shift_default: float = 0.17241 
+        # just a ramdom number for the global shift of the input on z axis (used to avoid octree boundary marching cubes issues on synthetic datasets like MaiCity)
+        self.global_shift_default: float = 0. # 0.17241
 
         # baseline
         # self.run_baseline = False
@@ -48,28 +48,21 @@ class SHINEConfig:
         self.min_range: float = 2.75 # filter too-close points (and 0 artifacts)
         self.pc_radius: float = 20.0  # keep only the point cloud inside the
         # block with such radius (unit: m)
-        self.min_z: float = -3.0  # filter for z coordinates (unit: m)
+        self.min_z: float = -10.0  # filter for z coordinates (unit: m)
         self.max_z: float = 30.0
 
-        self.rand_downsample: bool = (
-            True  # apply random or voxel downsampling to input original point clcoud
-        )
-        self.vox_down_m: float = (
-            0.03  # the voxel size if using voxel downsampling (unit: m)
-        )
-        self.rand_down_r: float = (
-            1.0  # the decimation ratio if using random downsampling (0-1)
-        )
+        self.rand_downsample: bool = True # apply random or voxel downsampling to input original point clcoud
+        self.vox_down_m: float = 0.03 # the voxel size if using voxel downsampling (unit: m)
+        self.rand_down_r: float = 1.0 # the decimation ratio if using random downsampling (0-1)
 
+        # deprecated
         self.filter_noise: bool = False  # use SOR to remove the noise or not
         self.sor_nn: int = 25  # SOR neighborhood size
         self.sor_std: float = 2.5  # SOR std threshold
-
+        # deprecated
         self.estimate_normal: bool = False  # estimate surface normal or not
         self.normal_radius_m: float = 0.2  # supporting radius for estimating the normal
-        self.normal_max_nn: int = (
-            20  # supporting neighbor count for estimating the normal
-        )
+        self.normal_max_nn: int = 20 # supporting neighbor count for estimating the normal
 
         # semantic related
         self.semantic_on: bool = False # semantic shine mapping on [semantic]
@@ -81,17 +74,13 @@ class SHINEConfig:
         self.map_vox_down_m: float = 0.05 # 0.2 
 
         # octree
-        self.tree_level_world: int = (
-            10  # the total octree level, allocated for the whole space
-        )
+        self.tree_level_world: int = 10  # the total octree level, allocated for the whole space
         self.tree_level_feat: int = 4  # the octree levels with optimizable feature grid
         # start from the leaf level
         self.leaf_vox_size: float = 0.5  # voxel size of the octree leaf nodes (unit: m)
         self.feature_dim: int = 8  # length of the feature for each grid feature
         self.feature_std: float = 0.05  # grid feature initialization standard deviation
-        self.poly_int_on: bool = (
-            True  # use polynomial interpolation or linear interpolation
-        )
+        self.poly_int_on: bool = True # use polynomial interpolation or linear interpolation
         self.octree_from_surface_samples: bool = True  # Use all the surface samples or just the exact measurements to build the octree. If True may lead to larger memory, but is more robust while the reconstruction.
 
         # sampler
@@ -115,7 +104,7 @@ class SHINEConfig:
         self.continual_learning_reg: bool = True
         # regularization based
         self.lambda_forget: float = 1e5
-        self.cal_importance_weight_down_rate: int = 10 # set it larger to save the consuming time
+        self.cal_importance_weight_down_rate: int = 2 # set it larger to save the consuming time
         
         # replay based
         self.window_replay_on: bool = True
@@ -146,7 +135,7 @@ class SHINEConfig:
         self.sigma_scale_constant: float = 0.0 # scale factor adding to the constant sigma value (linear with the distance) [deprecated]
         self.logistic_gaussian_ratio: float = 0.55
 
-        self.proj_correction_on: bool = False # conduct projective distance correction based on the sdf gradient or not
+        self.proj_correction_on: bool = False # conduct projective distance correction based on the sdf gradient or not [deprecated]
         
         self.predict_sdf: bool = False
         self.neus_loss_on: bool = False  # use the unbiased and occlusion-aware weights for differentiable rendering as introduced in NEUS
@@ -159,7 +148,7 @@ class SHINEConfig:
         self.ekional_loss_on: bool = False
         self.weight_e: float = 0.1
 
-        # TODO: add to config file
+        # deprecated
         self.consistency_loss_on: bool = False
         self.weight_c: float = 1.0
         self.consistency_count: int = 1000
@@ -196,13 +185,13 @@ class SHINEConfig:
         
         # marching cubes related
         self.mc_res_m: float = 0.1
-        self.pad_voxel: int = 0
+        self.pad_voxel: int = 1
         self.mc_with_octree: bool = True # conducting marching cubes reconstruction within a certain level of the octree or within the axis-aligned bounding box of the whole map
         self.mc_query_level: int = 8
         self.mc_vis_level: int = 1 # masked the marching cubes for level higher than this
         self.mc_mask_on: bool = True # use mask for marching cubes to avoid the artifacts
-
-        self.min_cluster_vertices: int = 300 # if a connected's vertices number is smaller than this value, it would get filtered
+        self.mc_local: bool = False # only do the marching cubes in a local bounding box or globally
+        self.min_cluster_vertices: int = 50 # if a connected's vertices number is smaller than this value, it would get filtered
         
         self.infer_bs: int = 4096
         self.occ_binary_mc: bool = False
@@ -246,6 +235,7 @@ class SHINEConfig:
         self.rand_downsample = config_args["process"]["rand_downsample"]
         self.vox_down_m = config_args["process"]["vox_down_m"]
         self.rand_down_r = config_args["process"]["rand_down_r"]
+        self.min_z = config_args["process"]["min_z_m"]
         # self.estimate_normal = config_args["process"]["estimate_normal"]
         # self.filter_noise = config_args["process"]["filter_noise"]
         # self.semantic_on = config_args["process"]["semantic_on"] 
@@ -388,10 +378,8 @@ class SHINEConfig:
             "mc_vis_level"
         ]
         # self.mc_mask_on = config_args["eval"]["mc_mask_on"] # using masked marching cubes according to the octree or not, default true
-        
-        self.save_map = config_args["eval"][
-            "save_map"
-        ] 
+        self.mc_local = config_args["eval"]["mc_local"]
+        self.save_map = config_args["eval"]["save_map"]
         # tree level starting for reconstruction and visualization, the larger of this value, 
         # the larger holes would be filled (better completion), but at the same time more artifacts 
         # would appear at the boundary of the map

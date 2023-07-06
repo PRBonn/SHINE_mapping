@@ -122,7 +122,7 @@ def nn_correspondance(verts1, verts2, truncation_dist, ignore_outlier=True):
         return indices, distances
 
     pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(verts1)
+    pcd.points = o3d.utility.Vector3dVector(verts1.astype(np.float64))
     kdtree = o3d.geometry.KDTreeFlann(pcd)
 
     truncation_dist_square = truncation_dist**2
@@ -207,7 +207,7 @@ def crop_intersection(file_gt, files_pred, out_file_crop, dist_thre=0.1, mesh_sa
             if dist_square[0] < dist_square_thre:
                 crop_pcd_gt_pts.append(pt)
         
-        pcd_gt_pts = np.asarray(crop_pcd_gt_pts)
+        pcd_gt_pts = np.asarray(crop_pcd_gt_pts, dtype=np.float64)
 
     crop_pcd_gt = o3d.geometry.PointCloud()
     crop_pcd_gt.points = o3d.utility.Vector3dVector(pcd_gt_pts)

@@ -7,6 +7,7 @@ import wandb
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import shutil
 
 from utils.config import SHINEConfig
 from utils.tools import *
@@ -29,6 +30,8 @@ def run_shine_mapping_incremental():
         )
 
     run_path = setup_experiment(config)
+    shutil.copy2(sys.argv[1], run_path) # copy the config file to the result folder
+    
     dev = config.device
 
     # initialize the feature octree
@@ -202,7 +205,10 @@ def run_shine_mapping_incremental():
             if config.mc_with_octree: # default
                 cur_mesh = mesher.recon_octree_mesh(config.mc_query_level, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
             else:
-                cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+                if config.mc_local: # only build the local mesh to speed up
+                    cur_mesh = mesher.recon_bbx_mesh(dataset.cur_bbx, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
+                else:
+                    cur_mesh = mesher.recon_bbx_mesh(dataset.map_bbx, config.mc_res_m, mesh_path, map_path, config.save_map, config.semantic_on)
 
         T3 = get_time()
 
@@ -214,6 +220,7 @@ def run_shine_mapping_incremental():
                 vis.update(dataset.cur_frame_pc, dataset.cur_pose_ref)
 
             # visualize the octree (it is a bit slow and memory intensive for the visualization)
+            # vis_octree = True
             # if vis_octree: 
             #     cur_mesh.transform(dataset.begin_pose_inv)
             #     vis_list = [] # create a list of bbx for the octree nodes

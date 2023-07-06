@@ -9,13 +9,14 @@ setting:
   model_path: "" 
   first_frame_ref: False
   begin_frame: 0
-  end_frame: 100
+  end_frame: 5000
   every_frame: 1 # 1 means does not skip
   device: "cuda"
   gpu_id: "0"
 process:
-  min_range_m: 2.75
-  pc_radius_m: 25.0  # distance filter for each frame
+  min_range_m: 3.0
+  pc_radius_m: 50.0  # distance filter for each frame
+  min_z_m: -3.5
   rand_downsample: False # use random or voxel downsampling
   vox_down_m: 0.05
   rand_down_r: 0.2
@@ -26,9 +27,9 @@ sampler:
   free_sample_end_dist_m: 0.8
   free_sample_n: 3
 octree:
-  leaf_vox_size: 0.2
+  leaf_vox_size: 0.3
   tree_level_world: 12
-  tree_level_feat: 3
+  tree_level_feat: 2
   feature_dim: 8
   poly_int_on: True
   octree_from_surface_samples: True
@@ -42,7 +43,7 @@ loss:
   sigma_sigmoid_m: 0.1
   loss_weight_on: False
   behind_dropoff_on: False
-  ekional_loss_on: False
+  ekional_loss_on: True
   weight_e: 0.1
 continual:
   continual_learning_reg: False # using incremental mapping with regularization
@@ -50,17 +51,18 @@ continual:
   window_replay_on: False # replay within the sliding window
   window_radius_m: 0
 optimizer:
-  iters: 20000
+  iters: 40000
   batch_size: 4096
-  learning_rate: 0.01
+  learning_rate: 0.05
   weight_decay: 1e-7 # l2 regularization
 eval:
   wandb_vis_on: False # log to wandb or not
   o3d_vis_on: True # visualize the mapping or not
-  vis_freq_iters: 5000 # reconstruct the mesh every x iterations
+  vis_freq_iters: 10000 # reconstruct the mesh every x iterations
   save_freq_iters: 10000 # save the model and octree every x iterations
   mesh_freq_frame: 1
   mc_res_m: 0.1 # reconstruction marching cubes resolution
   mc_with_octree: True # querying sdf only in certain levels of the octree
+  mc_local: False
   mc_vis_level: 1
   save_map: False # save the sdf map or not 

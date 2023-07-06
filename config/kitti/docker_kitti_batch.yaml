@@ -14,8 +14,9 @@ setting:
   device: "cuda"
   gpu_id: "0"
 process:
-  min_range_m: 2.75
-  pc_radius_m: 25.0  # distance filter for each frame
+  min_range_m: 3.0
+  pc_radius_m: 50.0  # distance filter for each frame
+  min_z_m: -3.5
   rand_downsample: False # use random or voxel downsampling
   vox_down_m: 0.05
   rand_down_r: 0.2
@@ -62,5 +63,6 @@ eval:
   mesh_freq_frame: 1
   mc_res_m: 0.1 # reconstruction marching cubes resolution
   mc_with_octree: True # querying sdf only in certain levels of the octree
+  mc_local: False
   mc_vis_level: 1
   save_map: True # save the sdf map or not 

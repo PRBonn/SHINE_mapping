@@ -1,5 +1,5 @@
 setting:
-  name: "ncd_incre_reg"
+  name: "ncd_batch"
   output_root: "./experiments/"
   pc_path: "xxx/data/ncd_example/quad/pcd"
   pose_path: "xxx/data/ncd_example/quad/poses.txt"
@@ -9,22 +9,22 @@ setting:
   first_frame_ref: False
   begin_frame: 0
   end_frame: 1300
-  every_frame: 5 # 1 means does not skip
+  every_frame: 3 # 1 means does not skip
   device: "cuda"
   gpu_id: "0"
 process:
-  min_range_m: 1.5
+  min_range_m: 2.5
   pc_radius_m: 50.0  # distance filter for each frame
   min_z_m: -10.0
   rand_downsample: False # use random or voxel downsampling
   vox_down_m: 0.05
   rand_down_r: 0.2
 sampler:
-  surface_sample_range_m: 0.5
+  surface_sample_range_m: 0.3
   surface_sample_n: 3
   free_sample_begin_ratio: 0.3
-  free_sample_end_dist_m: 1.0
-  free_sample_n: 3
+  free_sample_end_dist_m: 0.8
+  free_sample_n: 6
 octree:
   leaf_vox_size: 0.2
   tree_level_world: 12
@@ -35,33 +35,33 @@ octree:
 decoder:
   mlp_level: 2
   mlp_hidden_dim: 32
-  freeze_after_frame: 20
+  freeze_after_frame: 0
 loss:
   ray_loss: False
   main_loss_type: sdf_bce  # select from sdf_bce (our proposed), sdf_l1, sdf_l2, dr, dr_neus
   sigma_sigmoid_m: 0.1
   loss_weight_on: False
   behind_dropoff_on: False
-  ekional_loss_on: False
+  ekional_loss_on: True
   weight_e: 0.1
 continual:
-  continual_learning_reg: True # using incremental mapping with regularization
-  lambda_forget: 1e4 # the larger this value, the model would be less likely to forget
+  continual_learning_reg: False # using incremental mapping with regularization
+  lambda_forget: 0 
   window_replay_on: False # replay within the sliding window
   window_radius_m: 0
 optimizer:
-  iters: 50  # iterations per frame
-  batch_size: 4096
+  iters: 50000
+  batch_size: 8192
   learning_rate: 0.01
   weight_decay: 1e-7 # l2 regularization
 eval:
   wandb_vis_on: False # log to wandb or not
   o3d_vis_on: True # visualize the mapping or not
-  vis_freq_iters: 0 
-  save_freq_iters: 10000 # save the model and octree every x iterations
-  mesh_freq_frame: 5 # reconstruct the mesh every x frames
+  vis_freq_iters: 10000 # reconstruct the mesh every x iterations
+  save_freq_iters: 50000 # save the model and octree every x iterations
+  mesh_freq_frame: 1
   mc_res_m: 0.1 # reconstruction marching cubes resolution
-  mc_with_octree: True # querying sdf only in certain levels of the octree
+  mc_with_octree: False # querying sdf only in certain levels of the octree
   mc_local: False
   mc_vis_level: 1
   save_map: False # save the sdf map or not 
