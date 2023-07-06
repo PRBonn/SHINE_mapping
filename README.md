@@ -343,7 +343,7 @@ to get the reconstruction metrics such as Chamfer distance, completeness, F-scor
 
 As mentioned in the paper, we also compute a fairer accuracy metric using the ground truth point cloud masked by the intersection of the reconstructed meshes of all the compared methods. To generate such masked ground truth point clouds, you can configure the data path in `./eval/crop_intersection.py` and then run it.
 
-To reproduce the quantitative results on MaiCity and Newer College dataset in the paper, you can use the config files in `./config/config_icra2023/`. The reconsturction mesh can also be downloaded from [here](https://uni-bonn.sciebo.de/s/TC0RyQmfBjxLcWH). Note that these numbers are obtained using the batch mapping mode. You can achieve similar results using the incremental mapping mode with the replay strategy. 
+To reproduce the quantitative results on MaiCity and Newer College dataset in the paper, you can use the config files in `./config/config_icra2023/`. The reconstructed meshes can also be downloaded from [here](https://uni-bonn.sciebo.de/s/TC0RyQmfBjxLcWH). Note that these numbers are obtained using the batch mapping mode. You can achieve similar results using the incremental mapping mode with the replay strategy. 
 
 ## Tips
 

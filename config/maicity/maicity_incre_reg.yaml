@@ -14,7 +14,7 @@ setting:
   gpu_id: "0"
 process:
   min_range_m: 1.5
-  pc_radius_m: 20.0  # distance filter for each frame
+  pc_radius_m: 25.0  # distance filter for each frame
   min_z_m: -10.0
   rand_downsample: False # use random or voxel downsampling
   vox_down_m: 0.03

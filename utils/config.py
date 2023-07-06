@@ -255,34 +255,27 @@ class SHINEConfig:
         # use bayersian update of the occupancy prob. as the new label
 
         # octree
-        self.tree_level_world = config_args["octree"]["tree_level_world"]
         # the number of the total octree level (defining the world scale)
-        self.tree_level_feat = config_args["octree"][
-            "tree_level_feat"
-        ]  # the number of the octree level used for storing feature grid
-        self.leaf_vox_size = config_args["octree"][
-            "leaf_vox_size"
-        ]  # the size of the grid on octree's leaf level (unit: m)
-        self.feature_dim = config_args["octree"][
-            "feature_dim"
-        ]  # feature vector's dimension
+        self.tree_level_world = config_args["octree"]["tree_level_world"]
+        # the number of the octree level used for storing feature grid
+        self.tree_level_feat = config_args["octree"]["tree_level_feat"]
+        # the size of the grid on octree's leaf level (unit: m)
+        self.leaf_vox_size = config_args["octree"]["leaf_vox_size"]
+        # feature vector's dimension
+        self.feature_dim = config_args["octree"]["feature_dim"]
+            
         # self.feature_std = config_args["octree"][
         #     "feature_std"
         # ]  # feature vector's initialization sigma (a zero mean, sigma standard deviation gaussian distribution)
-        self.poly_int_on = config_args["octree"][
-            "poly_int_on"
-        ]  # use polynomial or linear interpolation of feature grids
-        self.octree_from_surface_samples = config_args["octree"][
-            "octree_from_surface_samples"
-        ]  # build the octree from the surface samples or only the measurement points
 
+        # use polynomial or linear interpolation of feature grids
+        self.poly_int_on = config_args["octree"]["poly_int_on"]
+        # build the octree from the surface samples or only the measurement points
+        self.octree_from_surface_samples = config_args["octree"]["octree_from_surface_samples"]
+            
         # decoder
-        self.geo_mlp_level = config_args["decoder"][
-            "mlp_level"
-        ]  # number of the level of the mlp decoder
-        self.geo_mlp_hidden_dim = config_args["decoder"][
-            "mlp_hidden_dim"
-        ]  # dimension of the mlp's hidden layer
+        self.geo_mlp_level = config_args["decoder"]["mlp_level"] # number of the level of the mlp decoder
+        self.geo_mlp_hidden_dim = config_args["decoder"]["mlp_hidden_dim"] # dimension of the mlp's hidden layer
         # freeze the decoder after runing for x frames (used for incremental mapping to avoid forgeting)
         self.freeze_after_frame = config_args["decoder"]["freeze_after_frame"]
 
@@ -307,19 +300,14 @@ class SHINEConfig:
         # ]  # use normal consistency loss [deprecated]
         # self.weight_n = float(config_args["loss"]["weight_n"])
         
-        self.ekional_loss_on = config_args["loss"][
-            "ekional_loss_on"
-        ]  # use ekional loss (gradient = 1 loss)
-        self.weight_e = float(config_args["loss"]["weight_e"])
+        self.ekional_loss_on = config_args["loss"]["ekional_loss_on"] # use ekional loss (gradient norm = 1) or not 
+        self.weight_e = float(config_args["loss"]["weight_e"]) # weight for the ekional loss
 
-        
         # continual learning (incremental)
         # using the regularization based continuous learning or the rehersal based continuous learning
         self.continual_learning_reg = config_args["continual"]["continual_learning_reg"]
         # the forgeting lambda for regularization based continual learning
-        self.lambda_forget = float(
-            config_args["continual"]["lambda_forget"]
-        )
+        self.lambda_forget = float(config_args["continual"]["lambda_forget"])
 
         # rehersal (replay) based method
         self.window_replay_on = config_args["continual"]["window_replay_on"]
@@ -334,9 +322,7 @@ class SHINEConfig:
         
 
         # optimizer
-        self.iters = config_args["optimizer"][
-            "iters"
-        ]  # maximum iters (in our implementation, iters means iteration actually)
+        self.iters = config_args["optimizer"]["iters"] # maximum iters (in our implementation, iters means iteration actually)
         self.bs = config_args["optimizer"]["batch_size"]
         # self.adam_eps = float(config_args["optimizer"]["adam_eps"])
         self.lr = float(config_args["optimizer"]["learning_rate"])
@@ -346,40 +332,23 @@ class SHINEConfig:
         # self.lr_iters_reduce_ratio = config_args["optimizer"][
         #     "lr_iters_reduce_ratio"
         # ]  # decay the learning rate after certain iterss by such ratio
-        self.weight_decay = float(
-            config_args["optimizer"]["weight_decay"]
-        )  # coefficient for L2 regularization
+        self.weight_decay = float(config_args["optimizer"]["weight_decay"])  # coefficient for L2 regularization
         
 
         # vis and eval
-        self.wandb_vis_on = config_args["eval"][
-            "wandb_vis_on"
-        ]  # use weight and bias to monitor the experiment or not
-        self.o3d_vis_on = config_args["eval"][
-            "o3d_vis_on"
-        ] # turn on the open3d visualizer to visualize the mapping progress or not
-        self.vis_freq_iters = config_args["eval"][
-            "vis_freq_iters"
-        ]  # frequency for mesh reconstruction for batch mode (per x iters)
-        self.save_freq_iters = config_args["eval"][
-            "save_freq_iters"
-        ]  # frequency for model saving for batch mode (per x iters)
-        self.mesh_freq_frame = config_args["eval"][
-            "mesh_freq_frame"
-        ]  # frequency for mesh reconstruction for incremental mode (per x frame)
-        self.mc_with_octree = config_args["eval"][
-            "mc_with_octree"
-        ]  # using octree to narrow down the region that needs the sdf query so as to boost the efficieny
+        self.wandb_vis_on = config_args["eval"]["wandb_vis_on"] # use weight and bias to monitor the experiment or not
+        self.o3d_vis_on = config_args["eval"]["o3d_vis_on"] # turn on the open3d visualizer to visualize the mapping progress or not
+        self.vis_freq_iters = config_args["eval"]["vis_freq_iters"] # frequency for mesh reconstruction for batch mode (per x iters)
+        self.save_freq_iters = config_args["eval"]["save_freq_iters"] # frequency for model saving for batch mode (per x iters)
+        self.mesh_freq_frame = config_args["eval"]["mesh_freq_frame"] # frequency for mesh reconstruction for incremental mode (per x frame)
+        self.mc_with_octree = config_args["eval"]["mc_with_octree"] # using octree to narrow down the region that needs the sdf query so as to boost the efficieny
         # if false, we query all the positions within the map bounding box
-        self.mc_res_m = config_args["eval"][
-            "mc_res_m"
-        ]  # marching cubes grid sampling interval (unit: m)
-        self.mc_vis_level = config_args["eval"][
-            "mc_vis_level"
-        ]
-        # self.mc_mask_on = config_args["eval"]["mc_mask_on"] # using masked marching cubes according to the octree or not, default true
+        self.mc_res_m = config_args["eval"]["mc_res_m"] # marching cubes grid sampling interval (unit: m)
+        self.mc_vis_level = config_args["eval"]["mc_vis_level"]
         self.mc_local = config_args["eval"]["mc_local"]
         self.save_map = config_args["eval"]["save_map"]
+        # self.mc_mask_on = config_args["eval"]["mc_mask_on"] # using masked marching cubes according to the octree or not, default true
+        
         # tree level starting for reconstruction and visualization, the larger of this value, 
         # the larger holes would be filled (better completion), but at the same time more artifacts 
         # would appear at the boundary of the map
