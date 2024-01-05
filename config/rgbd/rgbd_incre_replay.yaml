@@ -17,7 +17,7 @@ process:
   pc_radius_m: 5.0  # distance filter for each frame
   min_z_m: -10.0 
   rand_downsample: False # use random or voxel downsampling
-  vox_down_m: 0.01
+  vox_down_m: 0.02
   rand_down_r: 0.2
 sampler:
   surface_sample_range_m: 0.05
@@ -48,7 +48,7 @@ continual:
   continual_learning_reg: False # using incremental mapping with regularization
   lambda_forget: 0 
   window_replay_on: True # replay within the sliding window
-  window_radius_m: 6.0
+  window_radius_m: 7.0
 optimizer:
   iters: 50
   batch_size: 4096

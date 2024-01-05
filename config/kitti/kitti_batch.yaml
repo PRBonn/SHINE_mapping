@@ -29,7 +29,7 @@ sampler:
 octree:
   leaf_vox_size: 0.3
   tree_level_world: 12
-  tree_level_feat: 2
+  tree_level_feat: 3
   feature_dim: 8
   poly_int_on: True
   octree_from_surface_samples: True

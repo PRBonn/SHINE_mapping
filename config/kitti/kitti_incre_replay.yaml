@@ -1,5 +1,6 @@
 setting:
   name: "kitti_incre_replay"
+  output_root: "./experiments/"
   pc_path: "xxx/data/kitti/sequences/00/velodyne"
   label_path: "xxx/data/kitti/sequences/00/labels" # optional for semantic mapping
   pose_path: "xxx/data/kitti/sequences/00/poses.txt"
@@ -14,19 +15,19 @@ setting:
   gpu_id: "0"
 process:
   min_range_m: 3.0
-  pc_radius_m: 25.0  # distance filter for each frame
+  pc_radius_m: 30.0  # distance filter for each frame
   min_z_m: -3.5
   rand_downsample: False # use random or voxel downsampling
-  vox_down_m: 0.05
+  vox_down_m: 0.08
   rand_down_r: 0.2
 sampler:
-  surface_sample_range_m: 0.5
+  surface_sample_range_m: 0.3
   surface_sample_n: 3
   free_sample_begin_ratio: 0.3
   free_sample_end_dist_m: 1.0
   free_sample_n: 3
 octree:
-  leaf_vox_size: 0.2
+  leaf_vox_size: 0.3
   tree_level_world: 12
   tree_level_feat: 3
   feature_dim: 8
@@ -50,17 +51,17 @@ continual:
   window_replay_on: True # replay within the sliding window
   window_radius_m: 50.0
 optimizer:
-  iters: 50  # iterations per frame
-  batch_size: 4096
+  iters: 100  # iterations per frame
+  batch_size: 8192
   learning_rate: 0.01
-  weight_decay: 1e-7 # l2 regularization
+  weight_decay: 0 # l2 regularization
 eval:
   wandb_vis_on: False # log to wandb or not
   o3d_vis_on: True # visualize the mapping or not
   vis_freq_iters: 0 
   save_freq_iters: 10000 # save the model and octree every x iterations
-  mesh_freq_frame: 10 # reconstruct the mesh every x frames
-  mc_res_m: 0.1 # reconstruction marching cubes resolution
+  mesh_freq_frame: 20 # reconstruct the mesh every x frames
+  mc_res_m: 0.15 # reconstruction marching cubes resolution
   mc_with_octree: True # querying sdf only in certain levels of the octree
   mc_local: False
   mc_vis_level: 1

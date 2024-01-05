@@ -17,7 +17,7 @@ process:
   pc_radius_m: 50.0  # distance filter for each frame
   min_z_m: -10.0
   rand_downsample: False # use random or voxel downsampling
-  vox_down_m: 0.05
+  vox_down_m: 0.1
   rand_down_r: 0.2
 sampler:
   surface_sample_range_m: 0.5
@@ -51,7 +51,7 @@ continual:
   window_radius_m: 60.0
 optimizer:
   iters: 50  # iterations per frame
-  batch_size: 4096
+  batch_size: 8192
   learning_rate: 0.01
   weight_decay: 1e-7 # l2 regularization
 eval:

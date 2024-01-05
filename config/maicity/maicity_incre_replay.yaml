@@ -14,19 +14,19 @@ setting:
   gpu_id: "0"
 process:
   min_range_m: 1.5
-  pc_radius_m: 25.0  # distance filter for each frame
+  pc_radius_m: 50.0  # distance filter for each frame
   min_z_m: -10.0
   rand_downsample: False # use random or voxel downsampling
-  vox_down_m: 0.03
+  vox_down_m: 0.05
   rand_down_r: 0.2
 sampler:
-  surface_sample_range_m: 0.5
+  surface_sample_range_m: 0.15
   surface_sample_n: 3
   free_sample_begin_ratio: 0.3
   free_sample_end_dist_m: 0.8
   free_sample_n: 3
 octree:
-  leaf_vox_size: 0.5
+  leaf_vox_size: 0.2
   tree_level_world: 12
   tree_level_feat: 3
   feature_dim: 8
@@ -42,16 +42,16 @@ loss:
   sigma_sigmoid_m: 0.05
   loss_weight_on: False
   behind_dropoff_on: False
-  ekional_loss_on: False
+  ekional_loss_on: True
   weight_e: 0.1
 continual:
   continual_learning_reg: False # using incremental mapping with regularization
   lambda_forget: 0 
   window_replay_on: True # replay within the sliding window
-  window_radius_m: 40.0
+  window_radius_m: 55.0
 optimizer:
   iters: 50  # iterations per frame
-  batch_size: 4096
+  batch_size: 8192
   learning_rate: 0.01
   weight_decay: 0 # l2 regularization
 eval:

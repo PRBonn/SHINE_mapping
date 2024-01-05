@@ -220,6 +220,10 @@ kiss_icp_pipeline <pc_path>
 The estimated pose file can be found in `./results/latest/velodyne.txt`. You can directly use it as your `pose_path`. In this case, you do not need a calib file, so just set `calib_path: ""` in the config file.
 </details>
 
+
+### Generate colorized mesh
+Check the repository [Color-SHINE-MAPPING](https://github.com/ZorAttC/COLOR_SHINE_MAPPING) (thanks [@ZorAttC](https://github.com/ZorAttC) for the contribution) for using SHINE Mapping to reconstruct colorized mesh using colorized point cloud.
+
 ----
 
 ## Run

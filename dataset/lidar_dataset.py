@@ -91,7 +91,7 @@ class LiDARDataset(Dataset):
         # or we directly use the world frame as reference
 
         # to cope with the gpu memory issue (use cpu memory for the data pool, a bit slower for moving between cpu and gpu)
-        if self.used_pc_count > config.pc_count_gpu_limit and not config.continual_learning_reg:
+        if self.used_pc_count > config.pc_count_gpu_limit and not config.continual_learning_reg and not config.window_replay_on:
             self.pool_device = "cpu"
             self.to_cpu = True
             self.sampler.dev = "cpu"

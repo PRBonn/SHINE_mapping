@@ -20,7 +20,7 @@ process:
   vox_down_m: 0.05
   rand_down_r: 0.2
 sampler:
-  surface_sample_range_m: 0.3
+  surface_sample_range_m: 0.15
   surface_sample_n: 3
   free_sample_begin_ratio: 0.3
   free_sample_end_dist_m: 0.8
